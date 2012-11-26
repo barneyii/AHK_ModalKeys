@@ -1,0 +1,67 @@
+{
+"DefaultMode": {
+    "a":        { "Action": "a", "SetMode": "LMode",  "Modifiers": ["LShift"]      },
+    "o":        { "Action": "o", "SetMode": "LMode",  "Modifiers": ["LAlt"]        },
+    "e":        { "Action": "e", "SetMode": "LMode",  "Modifiers": ["LControl"]    },
+    "u":        { "Action": "u", "SetMode": "NavMode"                                 },
+    "i":        { "Action": "i", "SetMode": "LMode",  "Modifiers": ["LWin"]        },
+
+    "d":        { "Action": "d", "SetMode": "RSpecial" },
+    "h":        { "Action": "h", "SetMode": "RMode",  "Modifiers": ["LWin"]                  },
+    "t":        { "Action": "t", "SetMode": "RMode",  "Modifiers": ["RControl"]              },
+    "n":        { "Action": "n", "SetMode": "RMode",  "Modifiers": ["RAlt"]                  },
+    "s":        { "Action": "s", "SetMode": "RMode",  "Modifiers": ["RShift"]                },
+    "Dash":     { "Action": "-", "SetMode": "RMode",  "Modifiers": ["RControl", "LWin"]      }
+},
+
+
+"LMode": {
+    "d":        {  },
+    "h":        {  },
+    "t":        {  },
+    "n":        {  },
+    "s":        {  },
+    "Dash":     {  }
+},
+
+
+"RMode": {
+    "a":        {  },
+    "o":        {  },
+    "e":        {  },
+    "u":        {  },
+    "i":        {  }
+},
+
+
+"NavMode": {
+    "a":        { "SetMode": "NavMode",  "Modifiers": ["LShift"]       },
+    "o":        { "SetMode": "NavMode",  "Modifiers": ["LAlt"]         },
+    "e":        { "SetMode": "NavMode",  "Modifiers": ["LControl"]     },
+    "i":        { "SetMode": "NavMode",  "Modifiers": ["LWin"]         },
+
+    "7": {              "Action": "{f7}" },
+    "8": {              "Action": "{f8}" },
+    "9": {              "Action": "{f9}" },
+    "Zero": {           "Action": "{f10}" },
+    "OpenBracket": {    "Action": "{f11}" },
+    "CloseBracket": {   "Action": "{f12}" },
+    "f": {              "Action": "{Escape}" },
+    "g": {              "Action": "{Home}" },
+    "l": {              "Action": "{End}" },
+    "c": {              "Action": "{PgUp}" },
+    "r": {              "Action": "{PgDn}" },
+    "h": {              "Action": "{Left}" },
+    "s": {              "Action": "{Right}" },
+    "t": {              "Action": "{Up}" },
+    "n": {              "Action": "{Down}" },
+    "d": {              "Action": "{Backspace}" },
+    "Dash": {           "Action": "{Delete}" },
+    "b": {              "Action": "{x}" }
+},
+
+"RSpecial": {
+
+}
+
+}
