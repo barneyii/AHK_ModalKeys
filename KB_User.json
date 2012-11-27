@@ -3,7 +3,7 @@
     "a":        { "Action": "a", "SetMode": "LMode",  "Modifiers": ["LShift"]      },
     "o":        { "Action": "o", "SetMode": "LMode",  "Modifiers": ["LAlt"]        },
     "e":        { "Action": "e", "SetMode": "LMode",  "Modifiers": ["LControl"]    },
-    "u":        { "Action": "u", "SetMode": "NavMode"                                 },
+    "u":        { "Action": "u", "SetMode": "NavMode"                              },
     "i":        { "Action": "i", "SetMode": "LMode",  "Modifiers": ["LWin"]        },
 
     "d":        { "Action": "d", "SetMode": "RSpecial" },
@@ -16,21 +16,21 @@
 
 
 "LMode": {
-    "d":        {  },
-    "h":        {  },
-    "t":        {  },
-    "n":        {  },
-    "s":        {  },
-    "Dash":     {  }
+    "d":        { "Action": "d" },
+    "h":        { "Action": "h" },
+    "t":        { "Action": "t" },
+    "n":        { "Action": "n" },
+    "s":        { "Action": "s" },
+    "Dash":     { "Action": "-" }
 },
 
 
 "RMode": {
-    "a":        {  },
-    "o":        {  },
-    "e":        {  },
-    "u":        {  },
-    "i":        {  }
+    "a":        { "Action": "a" },
+    "o":        { "Action": "o" },
+    "e":        { "Action": "e" },
+    "u":        { "Action": "u" },
+    "i":        { "Action": "i" }
 },
 
 

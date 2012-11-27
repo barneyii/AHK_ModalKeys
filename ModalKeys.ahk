@@ -54,7 +54,7 @@ global Key_Status := {}
 global ModeActivationTime := 0
 global LastActionTime := 0
 global LastKeyPressTime := 0
-global LastModifierReleaseTime := 0
+global LastModKeyReleaseTime := 0
 global BaseBuffer := ""
 global ActionBuffer := ""
 global CurrentMode := DefaultMode
@@ -169,9 +169,7 @@ PressKey( keyName ){
   if KeyIsInactive( keyName ) { ; disable hardware key-repetition
     ActivateKey( keyName )
     SetNow()
-    DebugMsg( "lastActionTime: " LastActionTime)
     ReleaseInactiveModifiers()
-    DebugMsg( "lastActionTime: " LastActionTime)
 
     Debug1( "press key: " keyName, 0 )
 
@@ -291,20 +289,17 @@ ReleaseBaseModKey( modKey ){
 
   ; BaseBuffer should be empty, but just in case...
   ClearBuffers()
-
-  LastModifierReleaseTime := Now()
 }
 
 ; Hybrid Key Handlers (Normal Keys converted into Modifiers)
 ; ------------------------------------------------------------
-; l
 PressModKey( keyName, baseAction, newMode ) {
   numActiveMods := ActiveModKeysCount()
   isFirstModKey := (not numActiveMods)
 
   Debug2( "press modKey(" numActiveMods "): " keyName ": " baseAction
         . "\n lastAction: " A_PriorKey " (" Now() - LastActionTime " ms ago)"
-        . "\n modReleaseTime: " Now() - LastModifierReleaseTime " ms ago"
+        . "\n modReleaseTime: " Now() - LastModKeyReleaseTime " ms ago"
         , 3 )
 
   ; if this is the first modifier key pressed AND
@@ -312,7 +307,7 @@ PressModKey( keyName, baseAction, newMode ) {
     ; then assume user is typing and insert immediately
   if isFirstModKey
     and ( Now() - LastActionTime < InsertOnPress_MaxTimeSinceLastAction )
-    and ( LastActionTime > LastModifierReleaseTime )
+    and ( LastActionTime > LastModKeyReleaseTime )
   {
     FlushBaseBuffer() ; this should be empty already
     DoAction( baseAction )
@@ -344,13 +339,13 @@ ReleaseModKey( keyName, baseAction ) {
   ; if it was in modKey mode, deactivate it
   if ModKeyIsActive( keyName ) {
     DeactivateModKey( keyName )
-    LastModifierReleaseTime := Now()
+    LastModKeyReleaseTime := Now()
   }
 
   Debug2( "release modKey(" numActiveMods "): " keyName ": " baseAction
         . "\n last Action / Keypress: " A_PriorKey " (" Now() - LastActionTime
           . " / " Now() - LastKeyPressTime " ms ago)"
-        . "\n modReleaseTime: " Now() - LastModifierReleaseTime " ms ago"
+        . "\n modReleaseTime: " Now() - LastModKeyReleaseTime " ms ago"
         , 8 )
 
 
@@ -615,16 +610,14 @@ GetAllModifiers(){
   return AllModifiers
 }
 
-GetModifierPrefix( physical := true ){
-  mode := physical ? "P" : ""
+GetModifierPrefix( mode := "" ){
   prefix := (GetKeyState("Alt", mode ) ? "!" : "")
     . (GetKeyState("Control", mode ) ? "^" : "")
     . (GetKeyState("Shift", mode ) ? "+" : "")
     . ( (GetKeyState("LWin", mode ) or GetKeyState("RWin", mode ) ) ? "#" : "")
   return prefix
 }
-ModifierPrefix_Display( physical := true ){
-  mode := physical ? "P" : ""
+ModifierPrefix_Display( mode := ""  ){
   prefix := " "
     . ( GetKeyState("LAlt", mode ) ? "!" : "" )
     . ( GetKeyState("LControl", mode ) ? "^" : "" )
@@ -733,7 +726,7 @@ DebugMsg( ByRef msg, row := 0, col := 0, cycleRows := 0, cycleCols := 0 , Debug_
 }
 Debug0(){
   msg := " state: " CurrentMode " (" ActiveModKeysCount() "): " mkString( GetAllActiveModKeys() )
-      . "\n prefix: " ModifierPrefix_Display() " / " ModifierPrefix_Display( false )
+      . "\n prefix: " ModifierPrefix_Display( "P" ) " / " ModifierPrefix_Display( )
       . "\n BaseBuffer: " BaseBuffer
       . "\n ActionBuffer: " ActionBuffer
   DebugMsg( msg )
