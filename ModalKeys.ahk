@@ -24,9 +24,9 @@ global Debug              := true
 global InsertOnPress_MaxTimeSinceLastAction := 200
 global InsertOnRelease_MaxPressDuration := 500
 global ModeActivationDelay := 300
-global EnableKeyRepetition := false
+global EnableKeyRepetition := true
 global FirstRepetitionDelay := 500
-global RepetitionDelay := 200
+global RepetitionDelay := 50
 
 ; Mode Names
 global DefaultMode := "DefaultMode"
@@ -53,12 +53,11 @@ ActionBuffer := ""
 global ModeActivationTime := 0
 global LastActionTime := 0
 global LastKeyPressTime := 0
-global LastModKeyReleaseTime := 0
+global TypingModeLastEntered := A_TickCount
 global CurrentMode := DefaultMode
 
 ; Initializers
 ;===============================================================
-
 InitializeKeyBindings( baseBindings, defaultBindings, userBindings){
   allBindings := {}
 
@@ -142,19 +141,24 @@ ClearTooltip(){
 ;===============================================================
 
 DoRepetitions:
+global CurrentlyRepeatingAction, CurrentlyRepeatingKey
+if (EnableKeyRepetition){
   DoAction( CurrentlyRepeatingAction )
   SetTimer, DoRepetitions, % RepetitionDelay
+}
 return
 
-StartRepeating( key ){
-  if (EnableKeyRepetition){
-    CurrentlyRepeatingAction := key
-    SetTimer, DoRepetitions, % FirstRepetitionDelay
-  }
+StartRepeating( key, action ){
+  global CurrentlyRepeatingAction, CurrentlyRepeatingKey
+  CurrentlyRepeatingKey := key
+  CurrentlyRepeatingAction := action
+  SetTimer, DoRepetitions, % FirstRepetitionDelay
 }
 
 StopRepeating(){
+  global CurrentlyRepeatingAction, CurrentlyRepeatingKey
   CurrentlyRepeatingAction := ""
+  CurrentlyRepeatingKey := ""
   SetTimer, DoRepetitions, Off
 }
 
@@ -163,7 +167,7 @@ StopRepeating(){
 
 KeyPressEvent( keyName ){
   if KeyIsUnpressed( keyName ) { ; disable hardware key-repetition
-    DebugMsg("\npressed key: " keyName "\t\t" MakeStatusMsg())
+    ;DebugMsg("\npressed key: " keyName "\t\t" MakeStatusMsg())
 
     SetKeyPressed( keyName )
     SetNow()
@@ -194,9 +198,12 @@ KeyReleaseEvent( keyName ){
   SetKeyReleased( keyName )
   SetNow()
 
+  if ( keyName == CurrentlyRepeatingKey ) {
+    StopRepeating()
+  }
+
   ; dispatch to appropriate handler
   baseAction := GetBaseAction( keyName )
-
   if baseAction {
     if KeyIsModKey( keyName, CurrentMode ) {
       ; ModKey Key
@@ -212,10 +219,16 @@ KeyReleaseEvent( keyName ){
 
   ; activate default mode if there are no keys pressed
   if ( PressedKeyCount() == 0 ){
+    ; if we are returning to default/typing mode after hotkeys were pressed, remember the time
+    if ( CurrentMode != BaseMode and CurrentMode != DefaulModet
+      and ModeActivationTime < LastActionTime ){
+      DebugMsg("setting tm entry.\t la:" Now()  - LastActionTime " ma: " Now() - ModeActivationTime )
+      TypingModeLastEntered := Now()
+    }
     ; if user just pressed and released key(s) very quickly,
     ; revert to typing mode and retroactively insert queued BaseMode actions
     if ( Now() - LastKeyPressTime < InsertOnRelease_MaxPressDuration ) {
-      flushed := FlushBaseBuffer()
+      FlushBaseBuffer()
     } else {
       ; it's too long since last key-press: forget queued characters
       ClearBuffers()
@@ -223,11 +236,12 @@ KeyReleaseEvent( keyName ){
     if ( CurrentMode != DefaultMode ){
       ActivateMode( DefaultMode )
     }
+    ; ensure there is no repetition going on if there are no keys pressed
+    StopRepeating()
   }
 
   ReleaseInactiveModifiers()
-
-  DebugMsg("\nreleased key: " keyName "\t\t" MakeStatusMsg())
+  ;DebugMsg("\nreleased key: " keyName "\t\t" MakeStatusMsg())
 }
 
 ; Base Modifier Handlers: Factory Default Modifier Keys like Control, Alt)
@@ -258,16 +272,18 @@ PressModKey( keyName, baseAction ) {
   setMode := GetCurrentBinding( keyName )["SetMode"]
   newMode := setMode ? setMode : CurrentMode
 
+  DebugMsg("press " keyName "\tla:" Now() - LastActionTime "\t\ttm:" Now() - TypingModeLastEntered)
+
   ; if this is the first modifier key pressed AND
     ; this is very soon after a normal (no-modifier) action
     ; then assume user is typing and insert immediately
   if isFirstModKey
     and ( Now() - LastActionTime < InsertOnPress_MaxTimeSinceLastAction )
-    and ( LastActionTime > LastModKeyReleaseTime )
+    and ( LastActionTime > TypingModeLastEntered )
   {
     FlushBaseBuffer() ; this should be empty already
     DoAction( baseAction )
-    StartRepeating( baseAction )
+    StartRepeating( keyName, baseAction )
   } else {
     ; We don't yet know whether key should act as modKey or ordinary key
     ; So change mode provisionally and prepare action buffers for both
@@ -292,7 +308,6 @@ ReleaseModKey( keyName, baseAction ) {
   ; if it was in modKey mode, deactivate it
   if ModKeyIsActive( keyName ) {
     DeactivateModKey( keyName )
-    LastModKeyReleaseTime := Now()
 
     ; if this was not the only key pressed and no actions have been performed
     ; since the mode was activated, flush the BaseBuffer and switch to typing mode
@@ -301,13 +316,9 @@ ReleaseModKey( keyName, baseAction ) {
       if ( Now() - LastKeyPressTime > InsertOnRelease_MaxPressDuration ){
         ClearBuffers()
       }
-      ActivateMode( BaseMode )
+      StopRepeating()
+      ActivateMode( BaseMode ) ; this will flush the BaseBuffer
     }
-  }
-
-
-  if ( baseAction == CurrentlyRepeatingAction ) {
-    StopRepeating()
   }
 }
 
@@ -327,16 +338,23 @@ PressNormalKey( keyName, baseAction ){
   if ( CurrentMode == BaseMode )
   {
     DoAction( baseAction )
+    StartRepeating( keyName, baseAction )
   }
   else if ( Now() - ModeActivationTime > ModeActivationDelay )
   { ; send action immediately if mode has been active long enough
     FlushActionsBuffer()
     DoAction( action )
+    StartRepeating( keyName, action )
   }
   else
-  { ; add baseAction and action to buffers
+  { ; we don't know whether typing or hotkey was intended:
+    ;add baseAction and action to buffers
     AppendToBaseBuffer( baseAction )
     AppendToActionBuffer( action )
+    ; start repeating hotkey action after a delay since
+    ; that is what will be desired if both the mod keys
+    ; and this key continue to be held down
+    StartRepeating( keyName, action )
   }
 
 }
@@ -354,13 +372,13 @@ DoAction( action ){
   Send {Blind}%action%
   global LastActionTime := Now()
   if (action){
-    DebugMsg("  sending: " action)
+    ;DebugMsg("  sending: " action)
   }
 }
 DoModifierAction( modifierAction ){
   Send {Blind}%modifierAction%
   if (modifierAction){
-    DebugMsg("  sending: " modifierAction)
+    ;DebugMsg("  sending: " modifierAction)
   }
 }
 
@@ -456,8 +474,10 @@ ReleaseInactiveModifiers(){
       releasedModifiers[modifier] := true
     }
   }
-  releaseModifiersStr := MakeReleaseModifiers( releasedModifiers )
-  DoModifierAction(releaseModifiersStr)
+  if (Count(releasedModifiers) > 0){
+    releaseModifiersStr := MakeReleaseModifiers( releasedModifiers )
+    DoModifierAction(releaseModifiersStr)
+  }
 
   return releasedModifiers
 }
