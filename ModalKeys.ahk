@@ -18,12 +18,7 @@ SendMode Input
 ;===============================================================
 
 ; Debugging configuration
-global Debug          := true
-global Debug0         := true
-;global DebugTooltip0  := true
-global Debug1         := false
-global Debug2         := false
-global Debug3         := false
+global Debug              := true
 
 ; Keyboard behaviour settings
 global InsertOnPress_MaxTimeSinceLastAction := 200
@@ -166,7 +161,8 @@ StopRepeating(){
 
 KeyPressEvent( keyName ){
   if KeyIsUnpressed( keyName ) { ; disable hardware key-repetition
-    Debug0(0)
+    DebugMsg(MakeStatusMsg())
+
     SetKeyPressed( keyName )
     SetNow()
     ReleaseInactiveModifiers()
@@ -189,12 +185,10 @@ KeyPressEvent( keyName ){
 
     ; Always do these last actions
     LastKeyPressTime := Now()
-    Debug0(1)
   }
 }
 
 KeyReleaseEvent( keyName ){
-  Debug0(2)
   SetKeyReleased( keyName )
   SetNow()
 
@@ -220,7 +214,6 @@ KeyReleaseEvent( keyName ){
     ; revert to typing mode and retroactively insert queued BaseMode actions
     if ( Now() - LastKeyPressTime < InsertOnRelease_MaxPressDuration ) {
       flushed := FlushBaseBuffer()
-      DebugMsg( "insert on release: " flushed )
     } else {
       ; it's too long since last key-press: forget queued characters
       ClearBuffers()
@@ -231,7 +224,9 @@ KeyReleaseEvent( keyName ){
   }
 
   ReleaseInactiveModifiers()
-  Debug0(3)
+
+  DebugMsg(MakeStatusMsg())
+
 }
 
 ; Base Modifier Handlers: Factory Default Modifier Keys like Control, Alt)
@@ -262,11 +257,6 @@ PressModKey( keyName, baseAction ) {
   setMode := GetCurrentBinding( keyName )["SetMode"]
   newMode := setMode ? setMode : CurrentMode
 
-  Debug2( "press modKey(" numActiveMods "): " keyName ": " baseAction
-        . "\n lastAction: " A_PriorKey " (" Now() - LastActionTime " ms ago)"
-        . "\n modReleaseTime: " Now() - LastModKeyReleaseTime " ms ago"
-        , 3 )
-
   ; if this is the first modifier key pressed AND
     ; this is very soon after a normal (no-modifier) action
     ; then assume user is typing and insert immediately
@@ -277,8 +267,6 @@ PressModKey( keyName, baseAction ) {
     FlushBaseBuffer() ; this should be empty already
     DoAction( baseAction )
     ;StartRepeating( baseAction )
-
-    Debug2( "modKey: insert on press: " baseAction, 6 )
   } else {
     ; We don't yet know whether key should act as modKey or ordinary key
     ; So change mode provisionally and prepare action buffers for both
@@ -294,8 +282,6 @@ PressModKey( keyName, baseAction ) {
     ; queue actions
     AppendToBaseBuffer( baseAction )
     AppendToActionBuffer( pressModifiersStr )
-
-    Debug2( "modKey activate " keyName " : " pressModifiersStr, 6)
   }
 }
 ReleaseModKey( keyName, baseAction ) {
@@ -322,12 +308,6 @@ ReleaseModKey( keyName, baseAction ) {
   if ( baseAction == CurrentlyRepeatingAction ) {
     StopRepeating()
   }
-
-  Debug2( "release modKey(" numActiveMods "): " keyName ": " baseAction
-        . "\n last Action / Keypress: " A_PriorKey " (" Now() - LastActionTime
-          . " / " Now() - LastKeyPressTime " ms ago)"
-        . "\n modReleaseTime: " Now() - LastModKeyReleaseTime " ms ago"
-        , 8 )
 }
 
 
@@ -336,7 +316,6 @@ ReleaseModKey( keyName, baseAction ) {
 PressNormalKey( keyName, baseAction ){
   numPressedKeys := PressedKeyCount()
   action :=     GetCurrentBinding( keyName )["Action"]
-  Debug2( "press normal key: " keyName )
 
   ; if this is the first key pressed, assume typing intended
   ; and activate BaseMode
@@ -362,8 +341,6 @@ PressNormalKey( keyName, baseAction ){
 }
 
 ReleaseNormalKey( keyName, baseAction ){
-  Debug2( "release normal key: " keyName )
-
   FlushActionsBuffer()
 }
 
@@ -383,8 +360,6 @@ ClearBuffers(){
   global BaseBuffer, ActionBuffer
   static i := 0
   i := mod(i, 4)
-  Debug3( "clearing buffers: \n  key: " BaseBuffer "\n hkey: " ActionBuffer
-        , i * 3, 2 )
   i++
 
   BaseBuffer := ""
@@ -455,11 +430,6 @@ ActivateMode( newMode ) {
 
   ; Always do
   ModeActivationTime := Now()
-
-  Debug2( "Activated Mode: " newMode " from " oldMode
-    . "\n release: " releaseModifiersStr
-    . "\n press: " pressModifiersStr
-    , 17)
 }
 
 
@@ -667,70 +637,16 @@ RemoveIntersection( ByRef set1, ByRef set2 ){
 ; Debugging
 ;===============================================================
 
-DebugMsg( ByRef msg, row := 0, col := 0, cycleRows := 0, cycleCols := 0 , Debug_level := 0 ){
-  static toolTipIndex := 3
-  static DebugRowOffset := {}
-  static DebugColOffset := {}
-
-  static Debug0StartCol := 0
-  static Debug0StartRow := 0
-  static Debug1StartCol := 0
-  static Debug1StartRow := 5
-  static Debug2StartCol := 0
-  static Debug2StartRow := 15
-  static Debug3StartCol := 0
-  static Debug3StartRow := 35
-
-  if ( Debug and Debug%Debug_level% ){
-    OutputDebug \n %msg%
-
-    if DebugTooltip%Debug_level% {
-      toolTipIndex := ( Debug_level == 0 ) ? 1
-        : ( mod(toolTipIndex, 18) + 3  ) ; cycle from 3 to 20
-
-      Debug4StartRow := 50
-      nextDLevel := Debug_level + 1
-      rowsAvailable := Debug%nextDLevel%StartRow - Debug%Debug_level%StartRow
-
-      if cycleCols {
-        offs := (0 DebugColOffset[cycleCols])
-        msg := offs " " msg
-        col := col + offs
-        DebugColOffset[cycleCols] := offs + 1
-      }
-      if cycleRows {
-        offs := (0 DebugRowOffset[cycleRows])
-        msg := offs " " msg
-        row := row + offs
-        DebugRowOffset[cycleRows] := offs + 1
-      }
-      col := mod( col, 4 )
-      row := mod( row, rowsAvailable )
-      col_abs := (Debug%Debug_level%StartCol + col) * 200
-      row_abs := (Debug%Debug_level%StartRow + row) * 18
-
-      Tooltip, % msg, col_abs, row_abs, toolTipIndex
-    }
+DebugMsg( msg, enabled := true ){
+  logFile := "debug.log"
+  if (Debug and enabled) {
+    FileAppend, % msg "\n\n", % logFile
   }
 }
-Debug0(rowOffset := 0){
-  global BaseBuffer, ActionBuffer
+MakeStatusMsg(){
   msg := " state: " CurrentMode " (" ActiveModKeysCount() ", " PressedKeyCount() "): " mkString( GetAllActiveModKeys() )
-      . "\n prefix: " ModifierPrefix_Display( "P" ) " / " ModifierPrefix_Display( )
-      . "\n BaseBuffer: " BaseBuffer
-      . "\n ActionBuffer: " ActionBuffer
-  DebugMsg( msg )
+  return msg
+}
+OffsetTooltip(msg, rowOffset := 0){
   Tooltip % msg, 0, 18*4*rowOffset, rowOffset+1
 }
-Debug1( ByRef msg, row := 0, col := 0, cycleRows := 0, cycleCols := 0 ){
-  DebugMsg( msg, row, col, cycleRows, cycleCols, 1)
-}
-
-Debug2( ByRef msg, row := 0, col := 0, cycleRows := 0, cycleCols := 0 ){
-  DebugMsg( msg, row, col, cycleRows, cycleCols, 2)
-}
-
-Debug3( ByRef msg, row := 0, col := 0, cycleRows := 0, cycleCols := 0 ){
-  DebugMsg( msg, row, col, cycleRows, cycleCols, 3)
-}
-
