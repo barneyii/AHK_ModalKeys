@@ -180,7 +180,7 @@ KeyPressEvent( keyName ){
     SetNow()
     ReleaseInactiveModifiers()
 
-    DebugMsg("\n" MakeStatusMsg())
+    DebugMsg(StrPad(keyName, 9) StrPad(" press ", 10) MakeStatusMsg())
 
     ; dispatch to approprate handler
     if IsBaseModKey( keyName ) {
@@ -202,7 +202,6 @@ KeyPressEvent( keyName ){
 }
 
 KeyReleaseEvent( keyName ){
-  ;DebugMsg("releasing key: " keyName "\t\t" MakeStatusMsg())
   SetKeyReleased( keyName )
   SetNow()
 
@@ -244,7 +243,7 @@ KeyReleaseEvent( keyName ){
   }
 
   ReleaseInactiveModifiers()
-  DebugMsg("released key: " keyName "\t\t" MakeStatusMsg())
+  DebugMsg(StrPad(keyName, 9) StrPad(" release ", 10) MakeStatusMsg())
 }
 
 ; Base Modifier Handlers: Factory Default Modifier Keys like Control, Alt)
@@ -682,7 +681,7 @@ MakeReleaseModifiers( modifiers ){
   return mkString( modifiers, "", "{", " Up}")
 }
 
-mkString( obj, separator := ", ", before := "", after := "" ){
+mkString( obj, separator := ",", before := "", after := "" ){
   str := ""
   isArray := obj.MaxIndex()
   doneFirst := false
@@ -712,6 +711,21 @@ Count( obj ){
   }
   return n
 }
+StrPad(str, padlen, left := true){
+  static spaces := "                              "
+  diff := padlen - StrLen(str)
+  StringLeft, padding, spaces, diff
+  return left ? str padding : padding str
+}
+StrPad_binary(str, padlen, padchar := " ", left := false){
+  if (i := padlen - StrLen(str)) {
+    VarSetCapacity(w, i, asc(padchar))
+    NumPut(0, &w+i, "Char")
+    VarSetCapacity(w, -1)
+  }
+  return left ? w str : str w
+}
+
 RemoveIntersection( ByRef set1, ByRef set2 ){
   return ; TODO: implement
 }
@@ -722,15 +736,19 @@ RemoveIntersection( ByRef set1, ByRef set2 ){
 DebugMsg( msg, enabled := true ){
   logFile := "debug.log"
   if (Debug and enabled) {
-    FileAppend, % msg "\n", % logFile
+    FormatTime timestamp, , yyyy-MM-dd HH:mm:ss
+    FileAppend, % timestamp "  " msg "\n", % logFile
   }
 }
 MakeStatusMsg(){
-  msg := CurrentMode " (" ActiveModKeysCount() ", " PressedKeyCount() "): "
-    . mkString( GetAllActiveModKeys() )
-    . " | " mkString( GetPressedKeys() )
+  msg := StrPad(CurrentMode, 12)
+    . StrPad(" (" ActiveModKeysCount() ", " PressedKeyCount() ")", 7)
+    . StrPad(ModifierPrefix_Display(), 8) "| "
+    . StrPad(mkString( GetAllActiveModKeys() ), 10) "| "
+    . mkString( GetPressedKeys() )
   return msg
 }
 OffsetTooltip(msg, rowOffset := 0){
   Tooltip % msg, 0, 18*4*rowOffset, rowOffset+1
 }
+
