@@ -727,7 +727,17 @@ StrPad_binary(str, padlen, padchar := " ", left := false){
 }
 
 RemoveIntersection( ByRef set1, ByRef set2 ){
-  return ; TODO: implement
+  removed := {}
+  for elem1, t in set1 {
+    if set2[elem1] {
+      set2.Remove(elem1)
+      removed[elem1] := true
+    }
+  }
+  for elem2, t in removed {
+    set1.Remove(elem2)
+  }
+  return removed
 }
 
 ; Debugging
