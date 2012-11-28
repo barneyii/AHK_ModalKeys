@@ -47,7 +47,7 @@ global ModeModModifiersMap := MakeModeModModifiersMap(KeyBindings)
 
 ; initialize status globals
 ModifiersActiveMap := {} ; Map[modifier => Map[modKey => true] ]
-PressedKeys := {}
+PressedKeys := { }
 BaseBuffer := ""
 ActionBuffer := ""
 global LastActionWasTyping := false
@@ -224,6 +224,7 @@ KeyReleaseEvent( keyName ){
   }
 
   ; activate default mode if there are no keys pressed
+  PrunePressedKeys()
   if ( PressedKeyCount() == 0 ){
 
     ; if user just pressed and released key(s) very quickly,
@@ -583,8 +584,8 @@ GetAllModifiers(){
 PrunePressedKeys(){
   global PressedKeys
   for key, t in PressedKeys {
-    pKeyName := GetKeyPhName(key)
-    if ( not GetKeyState(pKeyName, "P") ){
+    phKeyName := GetKeyPhName(key)
+    if ( not GetKeyState(phKeyName, "P") ){
       PressedKeys.Remove(key)
       DebugMsg("Unpressed key found in PressedKeys: " key)
     }
