@@ -1,11 +1,11 @@
 {
-  "LControl":       { "AHK_Name": "LControl"   , "SetMode": "BaseMode", "Modifiers": ["LControl"] },
-  "LShift":         { "AHK_Name": "LShift"     , "SetMode": "BaseMode", "Modifiers": ["LShift"]   },
-  "LAlt":           { "AHK_Name": "LAlt"       , "SetMode": "BaseMode", "Modifiers": ["LAlt"]     },
-  "LWin":           { "AHK_Name": "LWin"       , "SetMode": "BaseMode", "Modifiers": ["LWin"]     },
-  "RControl":       { "AHK_Name": "RControl"   , "SetMode": "BaseMode", "Modifiers": ["RControl"] },
-  "RShift":         { "AHK_Name": "RShift"     , "SetMode": "BaseMode", "Modifiers": ["RShift"]   },
-  "RAlt":           { "AHK_Name": "RAlt"       , "SetMode": "BaseMode", "Modifiers": ["RAlt"]     },
+  "LControl":       { "AHK_Name": "LControl"   , "Modifiers": ["LControl"] },
+  "LShift":         { "AHK_Name": "LShift"     , "Modifiers": ["LShift"]   },
+  "LAlt":           { "AHK_Name": "LAlt"       , "Modifiers": ["LAlt"]     },
+  "LWin":           { "AHK_Name": "LWin"       , "Modifiers": ["LWin"]     },
+  "RControl":       { "AHK_Name": "RControl"   , "Modifiers": ["RControl"] },
+  "RShift":         { "AHK_Name": "RShift"     , "Modifiers": ["RShift"]   },
+  "RAlt":           { "AHK_Name": "RAlt"       , "Modifiers": ["RAlt"]     },
 
   "Escape":         { "AHK_Name": "Escape"     , "Action": "{Escape}"     },
   "Backtick":       { "AHK_Name": "`"          , "Action": "`"            },

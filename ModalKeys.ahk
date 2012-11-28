@@ -20,14 +20,15 @@ SendMode Input
 ; Debugging configuration
 global Debug          := true
 global Debug0         := true
-global Debug1         := true
-global Debug2         := true
-global Debug3         := true
+;global DebugTooltip0  := true
+global Debug1         := false
+global Debug2         := false
+global Debug3         := false
 
 ; Keyboard behaviour settings
-global InsertOnPress_MaxTimeSinceLastAction := 500
+global InsertOnPress_MaxTimeSinceLastAction := 200
 global InsertOnRelease_MaxPressDuration := 500
-global ModeActivationDelay := 500
+global ModeActivationDelay := 300
 global FirstRepetitionDelay := 500
 global RepetitionDelay := 200
 
@@ -49,14 +50,14 @@ global AllModifiers := FindAllModifiers(KeyBindings)
 global ModeModModifiersMap := MakeModeModModifiersMap(KeyBindings)
 
 ; initialize status globals
-G_ModifiersActiveMap := {} ; Map[modifier => Map[modKey => true] ]
-global Key_Status := {}
+ModifiersActiveMap := {} ; Map[modifier => Map[modKey => true] ]
+Key_Status := {}
+BaseBuffer := ""
+ActionBuffer := ""
 global ModeActivationTime := 0
 global LastActionTime := 0
 global LastKeyPressTime := 0
 global LastModKeyReleaseTime := 0
-global BaseBuffer := ""
-global ActionBuffer := ""
 global CurrentMode := DefaultMode
 
 ; Initializers
@@ -64,13 +65,11 @@ global CurrentMode := DefaultMode
 
 InitializeKeyBindings( baseBindings, defaultBindings, userBindings){
   allBindings := {}
-  fullDefaultBindings := baseBindings.Clone()
-  UpdateBindings(fullDefaultBindings, defaultBindings)
 
   for mode, bindings in userBindings {
-    ; initialize bindings with fullDefaultBindings bindings
-    allBindings[mode] := fullDefaultBindings.Clone()
-    UpdateBindings( allBindings[mode], userBindings[mode])
+    ; initialize bindings with baseBindings
+    allBindings[mode] := baseBindings.Clone()
+    UpdateBindings( allBindings[mode], userBindings[mode] )
   }
   allBindings[BaseMode] := baseBindings
   return allBindings
@@ -165,66 +164,42 @@ StopRepeating(){
 ; Key Handlers
 ;===============================================================
 
-PressKey( keyName ){
-  if KeyIsInactive( keyName ) { ; disable hardware key-repetition
-    ActivateKey( keyName )
+KeyPressEvent( keyName ){
+  if KeyIsUnpressed( keyName ) { ; disable hardware key-repetition
+    Debug0(0)
+    SetKeyPressed( keyName )
     SetNow()
     ReleaseInactiveModifiers()
 
-    Debug1( "press key: " keyName, 0 )
-
     ; dispatch to approprate handler
-    if CurrentMode == BaseMode
-    {
-      ; We're in Base Mode; skip unneccesary work and just send the key
-      baseAction := GetBaseAction( keyName )
-      if baseAction
-        PressNormalKey( keyName, baseAction )
-      else
-        PressBaseModKey( keyName )
-    }
-    else ; Not BaseMode
-    {
-      ; We need to do more work to determine where to dispatch to
-      baseAction := GetBaseAction( keyName )
-      currentBinding := GetCurrentBinding( keyName )
-      ; TODO: get these values from within subsidiary functions
-      action :=     currentBinding["Action"]
-      modifiers :=  currentBinding["Modifiers"]
-      setMode :=    currentBinding["SetMode"]
-      newMode := setMode ? setMode : CurrentMode
-
-      if baseAction {
-        if KeyIsModKey( keyName, CurrentMode ) {
-          ; ModKey Key
-          PressModKey( keyName, baseAction, newMode )
-        } else {
-          ; NormalKey
-          PressNormalKey( keyName, baseAction, action )
-        }
+    baseAction := GetBaseAction( keyName )
+    if baseAction {
+      if ( CurrentMode != BaseMode
+        and KeyIsModKey( keyName, CurrentMode )) {
+        ; ModKey Key
+        PressModKey( keyName, baseAction )
       } else {
-        ; Base Modifier Key
-        PressBaseModKey( keyName )
+        ; NormalKey
+        PressNormalKey( keyName, baseAction )
       }
+    } else {
+      ; Base Modifier Key
+      PressBaseModKey( keyName )
     }
 
     ; Always do these last actions
     LastKeyPressTime := Now()
-    Debug0()
+    Debug0(1)
   }
 }
 
-ReleaseKey( keyName ){
+KeyReleaseEvent( keyName ){
+  Debug0(2)
+  SetKeyReleased( keyName )
   SetNow()
 
   ; dispatch to appropriate handler
   baseAction := GetBaseAction( keyName )
-  currentBinding := GetCurrentBinding( keyName )
-  modifiers := currentBinding["Modifiers"]
-  releaseModifiers := MakeReleaseModifiers( modifiers )
-  setMode := currentBinding["SetMode"]
-
-  Debug1( "release key: " keyName ": " baseAction " / " releaseModifiers , 2 )
 
   if baseAction {
     if KeyIsModKey( keyName, CurrentMode ) {
@@ -239,8 +214,8 @@ ReleaseKey( keyName ){
     ReleaseBaseModKey( keyName )
   }
 
-  ; activate default mode if no more pressed modKeys
-  if ( ActiveModKeysCount() == 0 ){
+  ; activate default mode if there are no keys pressed
+  if ( PressedKeyCount() == 0 ){
     ; if user just pressed and released key(s) very quickly,
     ; revert to typing mode and retroactively insert queued BaseMode actions
     if ( Now() - LastKeyPressTime < InsertOnRelease_MaxPressDuration ) {
@@ -256,46 +231,36 @@ ReleaseKey( keyName ){
   }
 
   ReleaseInactiveModifiers()
-  DeactivateKey( keyName )
-  Debug0()
+  Debug0(3)
 }
 
 ; Base Modifier Handlers: Factory Default Modifier Keys like Control, Alt)
 ; ------------------------------------------------------------
 PressBaseModKey( modKey ){
-  Debug2( "press base modifier: " modKey , 0 )
-
   if ( CurrentMode != BaseMode ){
     ActivateMode( BaseMode )
   }
-  flushed := FlushBaseBuffer()
-  DebugMsg( "flushed: " flushed )
 
   modifiersToPress := ActivateModKey( modKey )
   pressModifierStr := MakePressModifiersStr( modifiersToPress )
   DoModifierAction( pressModifierStr )
-
-  Debug2( "pressed modifiers: " pressModifierStr , 1 )
 }
 
 ReleaseBaseModKey( modKey ){
-  numActiveMods := ActiveModKeysCount()
-  isLastActive := (numActiveMods <= 1)
-
-  Debug2( "release base modifier(" numActiveMods "): " modKey
-    , 3 )
 
   DeactivateModKey( modKey )
 
-  ; BaseBuffer should be empty, but just in case...
-  ClearBuffers()
 }
+
 
 ; Hybrid Key Handlers (Normal Keys converted into Modifiers)
 ; ------------------------------------------------------------
-PressModKey( keyName, baseAction, newMode ) {
+PressModKey( keyName, baseAction ) {
   numActiveMods := ActiveModKeysCount()
-  isFirstModKey := (not numActiveMods)
+  isFirstModKey := (numActiveMods == 0)
+
+  setMode := GetCurrentBinding( keyName )["SetMode"]
+  newMode := setMode ? setMode : CurrentMode
 
   Debug2( "press modKey(" numActiveMods "): " keyName ": " baseAction
         . "\n lastAction: " A_PriorKey " (" Now() - LastActionTime " ms ago)"
@@ -335,11 +300,27 @@ PressModKey( keyName, baseAction, newMode ) {
 }
 ReleaseModKey( keyName, baseAction ) {
   numActiveMods := ActiveModKeysCount()
+  isLastReleased := PressedKeyCount() == 0
 
   ; if it was in modKey mode, deactivate it
   if ModKeyIsActive( keyName ) {
     DeactivateModKey( keyName )
     LastModKeyReleaseTime := Now()
+
+    ; if this was not the only key pressed and no actions have been performed
+    ; since the mode was activated, flush the BaseBuffer and switch to typing mode
+    if ( !isLastReleased and LastActionTime < ModeActivationTime ){
+      ; if it has been too long since last key press, don't insert anything
+      if ( Now() - LastKeyPressTime > InsertOnRelease_MaxPressDuration ){
+        ClearBuffers()
+      }
+      ActivateMode( BaseMode )
+    }
+  }
+
+
+  if ( baseAction == CurrentlyRepeatingAction ) {
+    StopRepeating()
   }
 
   Debug2( "release modKey(" numActiveMods "): " keyName ": " baseAction
@@ -347,22 +328,21 @@ ReleaseModKey( keyName, baseAction ) {
           . " / " Now() - LastKeyPressTime " ms ago)"
         . "\n modReleaseTime: " Now() - LastModKeyReleaseTime " ms ago"
         , 8 )
-
-
-  if ( baseAction == CurrentlyRepeatingAction ) {
-    StopRepeating()
-  }
-  ; a key that was in repeat-insert mode cannot have been in modifier mode,
-  ; but we might as well check separately anyway
 }
 
 
 ; Hotkey Handlers (Modifier-specific action)
 ; ------------------------------------------------------------
-PressNormalKey( keyName, baseAction, action := "" ){
-  Debug2( "press " CurrentMode " hotkey: " keyName ": " baseAction " / " action
-    . "\n actionBuffer: " ActionBuffer "    delay: " Now() - ModeActivationTime "ms"
-    , 13 )
+PressNormalKey( keyName, baseAction ){
+  numPressedKeys := PressedKeyCount()
+  action :=     GetCurrentBinding( keyName )["Action"]
+  Debug2( "press normal key: " keyName )
+
+  ; if this is the first key pressed, assume typing intended
+  ; and activate BaseMode
+  if (numPressedKeys == 1){
+    ActivateMode(BaseMode)
+  }
 
   if ( CurrentMode == BaseMode )
   {
@@ -382,9 +362,7 @@ PressNormalKey( keyName, baseAction, action := "" ){
 }
 
 ReleaseNormalKey( keyName, baseAction ){
-  Debug2( "release hotkey: " keyName ": " baseAction
-    . "\n actionBuffer: " ActionBuffer "    delay: " Now() - ModeActivationTime
-    , 15 )
+  Debug2( "release normal key: " keyName )
 
   FlushActionsBuffer()
 }
@@ -402,14 +380,15 @@ DoModifierAction( modifierAction ){
   Send {Blind}%modifierAction%
 }
 ClearBuffers(){
+  global BaseBuffer, ActionBuffer
   static i := 0
   i := mod(i, 4)
   Debug3( "clearing buffers: \n  key: " BaseBuffer "\n hkey: " ActionBuffer
         , i * 3, 2 )
   i++
 
-  global BaseBuffer := ""
-  global ActionBuffer := ""
+  BaseBuffer := ""
+  ActionBuffer := ""
 }
 
 AppendToBaseBuffer( baseAction ){
@@ -462,8 +441,17 @@ ActivateMode( newMode ) {
   RemoveIntersection(deactivatedModifiers, activatedModifiers )
   releaseModifiersStr := MakeReleaseModifiers( deactivatedModifiers )
   pressModifiersStr := MakePressModifiersStr( activatedModifiers )
+  modifierActionStr := releaseModifiersStr . pressModifiersStr
 
-  AppendToActionBuffer( releaseModifiersStr . pressModifiersStr )
+  ; if we are entering base mode, flush the BaseBuffer
+  ; and immediately perform modifier change actions
+  if (newMode == BaseMode) {
+    FlushBaseBuffer()
+    DoModifierAction( modifierActionStr )
+  } else {
+    ; otherwise queue modifier change actions
+    AppendToActionBuffer( modifierActionStr )
+  }
 
   ; Always do
   ModeActivationTime := Now()
@@ -505,14 +493,14 @@ ActivateModKeys( modKeys ){
   return activatedModifiers
 }
 ActivateModKey( modKey ){
-  global G_ModifiersActiveMap
+  global ModifiersActiveMap
   modifiers := GetCurrentBinding( modKey )["Modifiers"]
   activatedModifiers := {}
   for i, modifier in modifiers {
-    G_ModifiersActiveMap[modifier, modKey] := true
+    ModifiersActiveMap[modifier, modKey] := true
     activatedModifiers[modifier] := true
   }
-  G_ModifiersActiveMap["", modKey] := true
+  ModifiersActiveMap["", modKey] := true
   return activatedModifiers
 }
 DeactivateModKeys( modKeys ){
@@ -525,18 +513,18 @@ DeactivateModKeys( modKeys ){
   return deactivatedModifiers
 }
 DeactivateModKey( modKey ){
-  global G_ModifiersActiveMap
+  global ModifiersActiveMap
   modifiers := GetCurrentBinding( modKey )["Modifiers"]
   deactivatedModifiers := {}
   for i, modifier in modifiers {
-    activeModifiers := G_ModifiersActiveMap[modifier]
+    activeModifiers := ModifiersActiveMap[modifier]
     activeModifiers.Remove(modKey)
     deactivatedModifiers[modifier] := true
     if isEmpty( activeModifiers ){
-      G_ModifiersActiveMap.Remove(modifier)
+      ModifiersActiveMap.Remove(modifier)
     }
   }
-  G_ModifiersActiveMap[""].Remove(modKey)
+  ModifiersActiveMap[""].Remove(modKey)
   return deactivatedModifiers
 }
 
@@ -549,24 +537,25 @@ Now(){
 }
 SetNow(){
   global CurrentEventTime := A_TickCount
-  DebugMsg( "setting now: " CurrentEventTime ", " Now() )
 }
 KeyIsActive( keyName ){
   global Key_Status
   return Key_Status[keyName]
 }
-KeyIsInactive( keyName ){
+KeyIsUnpressed( keyName ){
   return not KeyIsActive( keyName )
 }
-SetKeyStatus( keyName, keyStatus ) {
+SetKeyPressed( keyName ){
   global Key_Status
-  Key_Status[keyName] := keyStatus
+  Key_Status[keyName] := true
 }
-ActivateKey( keyName ){
-  SetKeyStatus( keyName, true )
+SetKeyReleased( keyName ){
+  global Key_Status
+  Key_Status.Remove(keyName)
 }
-DeactivateKey( keyName ){
-  SetKeyStatus( keyName, false )
+PressedKeyCount(){
+  global Key_Status
+  return Count(Key_Status)
 }
 
 KeyIsModKey( keyName, mode ){
@@ -590,12 +579,12 @@ GetCurrentBinding( keyName ){
 }
 
 GetActiveModKeysFor(modifier){
-  global G_ModifiersActiveMap
-  return G_ModifiersActiveMap[modifier]
+  global ModifiersActiveMap
+  return ModifiersActiveMap[modifier]
 }
 GetAllActiveModKeys(){
-  global G_ModifiersActiveMap
-  return G_ModifiersActiveMap[""]
+  global ModifiersActiveMap
+  return ModifiersActiveMap[""]
 }
 ActiveModKeysCount(){
   n := Count( GetAllActiveModKeys() )
@@ -724,12 +713,14 @@ DebugMsg( ByRef msg, row := 0, col := 0, cycleRows := 0, cycleCols := 0 , Debug_
     }
   }
 }
-Debug0(){
-  msg := " state: " CurrentMode " (" ActiveModKeysCount() "): " mkString( GetAllActiveModKeys() )
+Debug0(rowOffset := 0){
+  global BaseBuffer, ActionBuffer
+  msg := " state: " CurrentMode " (" ActiveModKeysCount() ", " PressedKeyCount() "): " mkString( GetAllActiveModKeys() )
       . "\n prefix: " ModifierPrefix_Display( "P" ) " / " ModifierPrefix_Display( )
       . "\n BaseBuffer: " BaseBuffer
       . "\n ActionBuffer: " ActionBuffer
   DebugMsg( msg )
+  Tooltip % msg, 0, 18*4*rowOffset, rowOffset+1
 }
 Debug1( ByRef msg, row := 0, col := 0, cycleRows := 0, cycleCols := 0 ){
   DebugMsg( msg, row, col, cycleRows, cycleCols, 1)
