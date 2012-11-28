@@ -24,6 +24,7 @@ global Debug              := true
 global InsertOnPress_MaxTimeSinceLastAction := 200
 global InsertOnRelease_MaxPressDuration := 500
 global ModeActivationDelay := 300
+global EnableKeyRepetition := false
 global FirstRepetitionDelay := 500
 global RepetitionDelay := 200
 
@@ -143,12 +144,13 @@ ClearTooltip(){
 DoRepetitions:
   DoAction( CurrentlyRepeatingAction )
   SetTimer, DoRepetitions, % RepetitionDelay
-
 return
 
 StartRepeating( key ){
-  CurrentlyRepeatingAction := key
-  SetTimer, DoRepetitions, % FirstRepetitionDelay
+  if (EnableKeyRepetition){
+    CurrentlyRepeatingAction := key
+    SetTimer, DoRepetitions, % FirstRepetitionDelay
+  }
 }
 
 StopRepeating(){
@@ -161,7 +163,7 @@ StopRepeating(){
 
 KeyPressEvent( keyName ){
   if KeyIsUnpressed( keyName ) { ; disable hardware key-repetition
-    DebugMsg(MakeStatusMsg())
+    DebugMsg("\npressed key: " keyName "\t\t" MakeStatusMsg())
 
     SetKeyPressed( keyName )
     SetNow()
@@ -225,8 +227,7 @@ KeyReleaseEvent( keyName ){
 
   ReleaseInactiveModifiers()
 
-  DebugMsg(MakeStatusMsg())
-
+  DebugMsg("\nreleased key: " keyName "\t\t" MakeStatusMsg())
 }
 
 ; Base Modifier Handlers: Factory Default Modifier Keys like Control, Alt)
@@ -266,7 +267,7 @@ PressModKey( keyName, baseAction ) {
   {
     FlushBaseBuffer() ; this should be empty already
     DoAction( baseAction )
-    ;StartRepeating( baseAction )
+    StartRepeating( baseAction )
   } else {
     ; We don't yet know whether key should act as modKey or ordinary key
     ; So change mode provisionally and prepare action buffers for both
@@ -352,10 +353,17 @@ DoAction( action ){
   ClearBuffers()
   Send {Blind}%action%
   global LastActionTime := Now()
+  if (action){
+    DebugMsg("  sending: " action)
+  }
 }
 DoModifierAction( modifierAction ){
   Send {Blind}%modifierAction%
+  if (modifierAction){
+    DebugMsg("  sending: " modifierAction)
+  }
 }
+
 ClearBuffers(){
   global BaseBuffer, ActionBuffer
   static i := 0
@@ -640,11 +648,11 @@ RemoveIntersection( ByRef set1, ByRef set2 ){
 DebugMsg( msg, enabled := true ){
   logFile := "debug.log"
   if (Debug and enabled) {
-    FileAppend, % msg "\n\n", % logFile
+    FileAppend, % msg "\n", % logFile
   }
 }
 MakeStatusMsg(){
-  msg := " state: " CurrentMode " (" ActiveModKeysCount() ", " PressedKeyCount() "): " mkString( GetAllActiveModKeys() )
+  msg := CurrentMode " (" ActiveModKeysCount() ", " PressedKeyCount() "): " mkString( GetAllActiveModKeys() )
   return msg
 }
 OffsetTooltip(msg, rowOffset := 0){
