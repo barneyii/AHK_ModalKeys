@@ -1,3 +1,10 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;  NOTES  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; For best performance, set windows Keyboard settings as follows:
+;; "Repeat Delay" to as Short as possible
+;; "Repeate Rate" to as Slow as possile
+;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ; Load Startup Settings
 ;===============================================================
 #SingleInstance force
@@ -17,7 +24,7 @@ SendMode Input
 ; Keyboard behaviour settings
 ;===============================================================
 
-global InactivityTimeout := 2000 ; enter DefaultMode after this long of inactivity
+global InactivityTimeout := 10000 ; enter DefaultMode after this long of inactivity
 global TypingModeTimeout := 200  ; InactivityTimeout while in TypingMode
 
 ; determines timeout of ModeTransitionStarted
@@ -64,8 +71,11 @@ global ModifiersActiveMap := {} ; Map[modifier => Map[modKey => true] ]
 global PressedKeys := {}
 global TypingBuffer := ""
 global QueuedModAction := ""
-global QueuedModKey := false
-global ModeTransitionStarted := false
+global QueuedModKey := ""
+global ModeTransitionStarted := 0
+global CurrentlyRepeatingAction := ""
+global CurrentlyRepeatingKey := ""
+global CurrentRepeatActionIsTyping := false
 
 ; Initializers
 ;===============================================================
@@ -114,6 +124,8 @@ MakeModeModModifiersMap( KeyBindings ){
 ;===============================================================
 
 ; AutoHotkey key bindings
+PrintScreen & F1:: SetKeyPressed("a")
+PrintScreen & F2:: Send {LShift Down}
 
 PrintScreen & F8::  ListVars
 PrintScreen & F9::  KeyHistory
@@ -148,32 +160,41 @@ ClearTooltip(){
 ;===============================================================
 
 DoRepetitions:
-  global CurrentlyRepeatingAction, CurrentlyRepeatingKey
   if ( EnableKeyRepetition and not A_IsSuspended ) {
     if (GetKeyState(CurrentlyRepeatingKey, "P")){
-      DoAction( CurrentlyRepeatingAction ) ; don't consider key-holding as normal typing
+      if CurrentRepeatActionIsTyping {
+        if (CurrentMode != TypingMode)
+          ActivateMode(TypingMode)
+        actions := FlushTypingBuffer(CurrentlyRepeatingAction)
+        DebugMsg("doing typing actions after delay: " actions)
+      } else {
+        DoAction( CurrentlyRepeatingAction ) ; don't consider key-holding as normal typing
+      }
       SetTimer, DoRepetitions, % RepetitionDelay
     } else {
-      DebugMsg("repetition called on unpressed key: " CurrentlyRepeatingKey)
+      DebugMsg("[bug] repetition called on unpressed key: " CurrentlyRepeatingKey)
       StopRepeating()
     }
   }
   return
 
-StartRepeating( key, action ){
-  ;DebugMsg("start repeating: " key " - " action)
-  global CurrentlyRepeatingAction, CurrentlyRepeatingKey
+StartRepeating( key, action, typing := false ){
+  DebugMsg("start repeating: " key " - " action)
+  ;DelayEnterDefaultMode()
   CurrentlyRepeatingKey := key
   CurrentlyRepeatingAction := action
-  DelayEnterDefaultMode()
+  CurrentRepeatActionIsTyping := typing
   SetTimer, DoRepetitions, % FirstRepetitionDelay
 }
 
+
 StopRepeating(){
-  global CurrentlyRepeatingAction, CurrentlyRepeatingKey
-  ;DebugMsg("stop repeating: " CurrentlyRepeatingKey " - " CurrentlyRepeatingAction)
+  if CurrentlyRepeatingAction {
+    DebugMsg("stop repeating: " CurrentlyRepeatingKey " - " CurrentlyRepeatingAction)
+  }
   CurrentlyRepeatingAction := ""
   CurrentlyRepeatingKey := ""
+  CurrentRepeatActionIsTyping := false
   SetTimer, DoRepetitions, Off
 }
 
@@ -183,7 +204,7 @@ StopRepeating(){
 EndModeTransition:
   ModeTransitionStarted := false
   SetTimer EndModeTransition, Off
-  ;DebugMsg( CurrentMode " Mode Transition over")
+  DebugMsg( CurrentMode " Mode Transition over")
   return
 
 DelayEndModeTransition(){
@@ -193,22 +214,25 @@ DelayEndModeTransition(){
 EnterDefaultMode:
   if ( not A_IsSuspended ){
     if ( CurrentMode != DefaultMode ){
-      DebugMsg( "delayed enter DefaultMode from " CurrentMode )
+      DebugMsg( "enter DefaultMode from " CurrentMode )
       ActivateMode( DefaultMode )
     }
     DelayEnterDefaultMode()
   }
   return
 DelayEnterDefaultMode(){
-  global CurrentlyRepeatingAction
-
-  delay := ( not CurrentlyRepeatingAction  ; wait longer to time out if repeating
-            and CurrentMode == TypingMode  )
-                 ? TypingModeTimeout : InactivityTimeout
   static currentlyScheduled
-  DebugMsg( CurrentMode ": delaying DefaultMode mode " currentlyScheduled - A_TickCount "ms => " delay "ms")
-  SetTimer EnterDefaultMode, % delay
-  currentlyScheduled := A_TickCount + delay
+  currentWait := currentlyScheduled - A_TickCount
+
+  if ( NoPressedKeys() and CurrentMode == TypingMode ) {
+    newWait := TypingModeTimeout
+  } else {
+    newWait := InactivityTimeout
+  }
+
+  DebugMsg( CurrentMode ": delaying DefaultMode mode " currentWait "ms => " newWait "ms")
+  SetTimer EnterDefaultMode, % newWait
+  currentlyScheduled := A_TickCount + newWait
 }
 
 
@@ -225,50 +249,61 @@ PressKeyEvent( key ){
 
     SetKeyPressed( key )
     SetNow()
-    ;ReleaseInactiveModifiers()
 
-    ; stop repeating upon any action
-    StopRepeating()
 
-    ; add typingKey to queue in case we retroactively need to switch to typingMode
-    AppendToTypingBuffer( GetTypingAction( key ) )
-
-    binding := GetCurrentBinding( key )
-
-    if QueuedModAction { ; already a queued modAction -> assume typing intended
-      ActivateMode( TypingMode )
-    }
-    ; do Mode Change
-    else if ( (newMode := binding["SetMode"]) and newMode != CurrentMode ){
-      ActivateMode( newMode )
-    }
-    ; activate Modifier
-    else if ( modifiers := binding["Modifiers"] ) {
-      ActivateModKey( key, modifiers )
-    }
-    ; do Action
-    else if ( action := binding["Action"] ) {
-      if ( CurrentMode == DefaultMode ){
-        ; actions in DefaultMode mode indicate typing
-        ActivateMode( TypingMode )
-      }
-      else if ModeTransitionStarted { ; prepare for different contingencies
-        ; remember this action and perform it if this key is immediately released
-        SetModAction( key, action )
-      }
-      else { ; We are now confidently in this mode: send Action immediately
-        DoAction( action )
-      }
-
-      ; if this is the first non-modifier key pressed, start repeating
-      if ( PressedNormalKeyCount() == 1 ){
-        StartRepeating( key, action )
-      }
-    }
+    ; use separate function for performing actions so it can be called separately
+    DoKeyPress( key )
 
     DebugMsg( StrPad("<P " key, 14) " " MakeStatusMsg(), false )
   }
 }
+DoKeyPress( key ){
+  ReleaseInactiveModifiers()
+
+  ; add typingKey to queue in case we retroactively need to switch to typingMode
+  typingAction := GetTypingAction( key )
+  AppendToTypingBuffer( typingAction )
+  if CurrentlyRepeatingAction {
+    StopRepeating()
+    DebugMsg( "press event stop repeating")
+  } else {
+    StartRepeating( key, typingAction, true )
+    DebugMsg("start repeatig typingAction: " typingAction)
+  }
+
+  binding := GetCurrentBinding( key )
+
+  if QueuedModAction { ; already a queued modAction -> assume typing intended
+    ActivateMode( TypingMode )
+  }
+  ; do Mode Change
+  else if ( (newMode := binding["SetMode"]) and newMode != CurrentMode ){
+    ActivateMode( newMode )
+  }
+  ; activate Modifier
+  else if ( modifiers := binding["Modifiers"] ) {
+    ActivateModKey( key, modifiers )
+  }
+  ; do Action
+  else if ( action := binding["Action"] ) {
+    if ( CurrentMode == DefaultMode ){
+      ; actions in DefaultMode mode indicate typing
+      ActivateMode( TypingMode )
+    }
+    else if ModeTransitionStarted { ; prepare for different contingencies
+      ; remember this action and perform it if this key is immediately released
+      SetModAction( key, action )
+    }
+    else { ; We are now confidently in this mode: send Action immediately
+      DoAction( action )
+    }
+
+    ; start repeating action
+    StartRepeating( key, action ) ; try doing it always
+  }
+}
+
+
 
 ReleaseKeyEvent( key ){
   DebugMsg( StrPad( "R> " key, 14) " " MakeStatusMsg(), false )
@@ -278,6 +313,7 @@ ReleaseKeyEvent( key ){
 
   ; stop repeating upon any action
   StopRepeating()
+  DebugMsg("release event stop repeating")
 
   binding := GetCurrentBinding( key )
 
@@ -299,7 +335,7 @@ ReleaseKeyEvent( key ){
     if ( CurrentMode == TypingMode ){
       DelayEnterDefaultMode()
     } else {
-      DebugMsg("no keys pressed. entering default mode")
+      ;DebugMsg("no keys pressed. entering default mode")
       GoSub EnterDefaultMode ; this sub activates if no keys are pressed
     }
   }
@@ -313,15 +349,16 @@ ReleaseKeyEvent( key ){
 
 ActivateMode( newMode ) {
   oldMode := CurrentMode
-  DebugMsg( "activating mode: " newMode )
+  ;DebugMsg( "activating mode: " newMode )
 
   if ( oldMode == newMode ) {
     DebugMsg( "oldMode(" oldMode ") = newMode(" newMode ")" )
     return
   }
 
-  ; always stop key repetition on mode change
-  StopRepeating()
+  ;; always stop key repetition on mode change
+  ;StopRepeating()
+  ;DebugMsg("activate mode stop repeating")
 
   ; if we are entering base mode, flush the TypingBuffer
   if ( newMode == TypingMode ){
@@ -329,25 +366,23 @@ ActivateMode( newMode ) {
   }
   if ( newMode == DefaultMode ){
     ClearBuffers()
-    DeactivateAllKeys()
+    ;DeactivateAllKeys()
   }
 
-  ; activate modKeys for new Mode
-  wereActive := GetPressedKeys().Clone()
+  ; activate pressed modifiers for new Mode
+  werePressed := GetPressedKeys().Clone()
   persistingModKeys := {}
-  for modKey, t in wereActive {
+  for modKey, t in werePressed {
     if KeyIsModKey( modKey, newMode ) {
       persistingModKeys[modKey] := true
     }
   }
-  ;keysToDeactivate := SetSubtract( wereActive, persistingModKeys )
   oldModkeys := DeactivateAllModKeys() ; doesn't deactivate the keys themselves
-  ;DeactivateKeys( keysToDeactivate )
   CurrentMode := newMode
   activatedModifiers := ActivateModKeys( persistingModKeys )
 
   ;DebugMsg( "  mode change key transition: ("
-  ;  . mkString(wereActive) ")(" mkString(oldModkeys) ") - [" mkString(keysToDeactivate) "] => "
+  ;  . mkString(werePressed) ")(" mkString(oldModkeys) ") - [" mkString(keysToDeactivate) "] => "
   ;  . "(" mkString(persistingModKeys) ")(" mkString(activatedModifiers) ")" )
 
   if ( newMode == TypingMode or newMode == BaseModMode
@@ -400,7 +435,7 @@ DoModAction(){
 }
 
 SetModAction( key, modAction ){
-  if QueuedModKey {
+  if QueuedModAction {
     DebugMsg("[bug] changed queued modAction: " QueuedModKey ":" QueuedModAction " => " key ":" modAction, false )
   }
   QueuedModKey := key
@@ -413,7 +448,6 @@ ClearBuffers(){
   QueuedModAction := ""
   QueuedModKey := false
 }
-
 
 
 ; Key Status handlers
