@@ -18,7 +18,7 @@ SendMode Input
 ;===============================================================
 
 global InactivityTimeout := 2000 ; enter DefaultMode after this long of inactivity
-global TypingModeTimeout := 500  ; InactivityTimeout while in TypingMode
+global TypingModeTimeout := 200  ; InactivityTimeout while in TypingMode
 
 ; determines timeout of ModeTransitionStarted
 ; when this event occurs, the QueuedModAction is performed if present
@@ -165,6 +165,7 @@ StartRepeating( key, action ){
   global CurrentlyRepeatingAction, CurrentlyRepeatingKey
   CurrentlyRepeatingKey := key
   CurrentlyRepeatingAction := action
+  DelayEnterDefaultMode()
   SetTimer, DoRepetitions, % FirstRepetitionDelay
 }
 
@@ -199,9 +200,13 @@ EnterDefaultMode:
   }
   return
 DelayEnterDefaultMode(){
-  delay := ( CurrentMode == TypingMode ) ? TypingModeTimeout : InactivityTimeout
+  global CurrentlyRepeatingAction
+
+  delay := ( not CurrentlyRepeatingAction  ; wait longer to time out if repeating
+            and CurrentMode == TypingMode  )
+                 ? TypingModeTimeout : InactivityTimeout
   static currentlyScheduled
-  ;DebugMsg( CurrentMode ": delaying DefaultMode mode " currentlyScheduled - A_TickCount "ms => " InactivityTimeout "ms")
+  DebugMsg( CurrentMode ": delaying DefaultMode mode " currentlyScheduled - A_TickCount "ms => " delay "ms")
   SetTimer EnterDefaultMode, % delay
   currentlyScheduled := A_TickCount + delay
 }
@@ -212,7 +217,7 @@ DelayEnterDefaultMode(){
 ;===============================================================
 
 PressKeyEvent( key ){
-  ; always enter DefaultMode after %InactivityTimout% of no keys pressed
+  ; delay auto-retun to DefaultMode after %InactivityTimout%
   DelayEnterDefaultMode()
 
   if KeyIsUnpressed( key ) { ; disable hardware key-repetition
@@ -294,6 +299,7 @@ ReleaseKeyEvent( key ){
     if ( CurrentMode == TypingMode ){
       DelayEnterDefaultMode()
     } else {
+      DebugMsg("no keys pressed. entering default mode")
       GoSub EnterDefaultMode ; this sub activates if no keys are pressed
     }
   }
@@ -313,6 +319,9 @@ ActivateMode( newMode ) {
     DebugMsg( "oldMode(" oldMode ") = newMode(" newMode ")" )
     return
   }
+
+  ; always stop key repetition on mode change
+  StopRepeating()
 
   ; if we are entering base mode, flush the TypingBuffer
   if ( newMode == TypingMode ){
