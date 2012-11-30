@@ -1,5 +1,11 @@
 {
 "DefaultMode": {
+    "'":       { "SetMode": "RModMode"   },
+    ",":       { "SetMode": "RModMode"   },
+    ".":       { "SetMode": "RModMode"   },
+    "p":       { "SetMode": "RModMode"   },
+    "y":       { "SetMode": "RModMode"   },
+
     "a":       { "SetMode": "RNavMode"   },
     "o":       { "SetMode": "RNavMode"   },
     "e":       { "SetMode": "RNavMode"   },
@@ -17,7 +23,7 @@
 
 "LModMode": {
     "d":    { "Modifiers": ["LWin"]               },
-    "h":    { "SetMode": "LFuncMode"              },
+    "h":    { "SetMode":    "LFuncMode"           },
     "t":    { "Modifiers": ["RControl"]           },
     "n":    { "Modifiers": ["RAlt"]               },
     "s":    { "Modifiers": ["RShift"]             },
@@ -38,6 +44,14 @@
     "4":     { "Action": "{f4}"                      },
     "5":     { "Action": "{f5}"                      },
     "6":     { "Action": "{f6}"                      }
+},
+
+"RModMode": {
+    "'":       { "Modifiers": ["RShift"]   },
+    ",":       { "Modifiers": ["RAlt"]     },
+    ".":       { "Modifiers": ["RControl"] },
+    "p":       { "Modifiers": ["LWin"]     },
+    "y":       {                           }
 },
 
 "RNavMode": {
