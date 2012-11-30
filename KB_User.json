@@ -26,7 +26,7 @@
 
 "LFuncMode": {
     "d":     { "Modifiers": ["LWin"]                 },
-    "h":     { "Modifiers": []                       },
+    "h":     { "Modifiers": [""]                     },
     "t":     { "Modifiers": ["RControl"]             },
     "n":     { "Modifiers": ["RAlt"]                 },
     "s":     { "Modifiers": ["RShift"]               },
@@ -64,7 +64,7 @@
     "a":     { "Modifiers": ["LShift"]    },
     "o":     { "Modifiers": ["LAlt"]      },
     "e":     { "Modifiers": ["LControl"]  },
-    "u":     { "Modifiers": []            },
+    "u":     { "Modifiers": [""]          },
     "i":     { "Modifiers": ["LWin"]      },
 
     "7":     { "Action": "{f7}"           },

@@ -24,10 +24,10 @@ SendMode Input
 ; Keyboard behaviour settings
 ;===============================================================
 
-global InactivityTimeout := 10000 ; enter DefaultMode after this long of inactivity
+global InactivityTimeout := 5000 ; enter DefaultMode after this long of inactivity
 global TypingModeTimeout := 200  ; InactivityTimeout while in TypingMode
 
-; determines timeout of ModeTransitionStarted
+; determines timeout of InModeTransition
 ; when this event occurs, the QueuedModAction is performed if present
 global ModeActivationDelay := 300
 
@@ -35,7 +35,6 @@ global ModeActivationDelay := 300
 global EnableKeyRepetition := true
 global FirstRepetitionDelay := 400
 global RepetitionDelay := 50
-
 
 
 ; Global Variables
@@ -72,10 +71,9 @@ global PressedKeys := {}
 global TypingBuffer := ""
 global QueuedModAction := ""
 global QueuedModKey := ""
-global ModeTransitionStarted := 0
+global InModeTransition := 0
 global CurrentlyRepeatingAction := ""
 global CurrentlyRepeatingKey := ""
-global CurrentRepeatActionIsTyping := false
 
 ; Initializers
 ;===============================================================
@@ -124,8 +122,18 @@ MakeModeModModifiersMap( KeyBindings ){
 ;===============================================================
 
 ; AutoHotkey key bindings
-PrintScreen & F1:: SetKeyPressed("a")
-PrintScreen & F2:: Send {LShift Down}
+PrintScreen & F1::
+  for k, v in KeyBindings["RFuncMode"]["u"] {
+    Send % k ":" v "\n"
+    for k2, v2 in v {
+      Send % "\t" k2 ":" v2 "\n"
+    }
+  }
+  return
+PrintScreen & F2:: Send % mkString( [] )
+
+PrintScreen & F3:: Send {Blind}{LWin DownTemp}1
+PrintScreen & F4:: Send {Blind}{LWin Down}1
 
 PrintScreen & F8::  ListVars
 PrintScreen & F9::  KeyHistory
@@ -162,14 +170,7 @@ ClearTooltip(){
 DoRepetitions:
   if ( EnableKeyRepetition and not A_IsSuspended ) {
     if (GetKeyState(CurrentlyRepeatingKey, "P")){
-      if CurrentRepeatActionIsTyping {
-        if (CurrentMode != TypingMode)
-          ActivateMode(TypingMode)
-        actions := FlushTypingBuffer(CurrentlyRepeatingAction)
-        DebugMsg("doing typing actions after delay: " actions)
-      } else {
-        DoAction( CurrentlyRepeatingAction ) ; don't consider key-holding as normal typing
-      }
+      DoAction( CurrentlyRepeatingAction ) ; don't consider key-holding as normal typing
       SetTimer, DoRepetitions, % RepetitionDelay
     } else {
       DebugMsg("[bug] repetition called on unpressed key: " CurrentlyRepeatingKey)
@@ -183,7 +184,6 @@ StartRepeating( key, action, typing := false ){
   ;DelayEnterDefaultMode()
   CurrentlyRepeatingKey := key
   CurrentlyRepeatingAction := action
-  CurrentRepeatActionIsTyping := typing
   SetTimer, DoRepetitions, % FirstRepetitionDelay
 }
 
@@ -194,7 +194,6 @@ StopRepeating(){
   }
   CurrentlyRepeatingAction := ""
   CurrentlyRepeatingKey := ""
-  CurrentRepeatActionIsTyping := false
   SetTimer, DoRepetitions, Off
 }
 
@@ -202,7 +201,7 @@ StopRepeating(){
 ;===============================================================
 
 EndModeTransition:
-  ModeTransitionStarted := false
+  InModeTransition := false
   SetTimer EndModeTransition, Off
   DebugMsg( CurrentMode " Mode Transition over")
   return
@@ -263,13 +262,8 @@ DoKeyPress( key ){
   ; add typingKey to queue in case we retroactively need to switch to typingMode
   typingAction := GetTypingAction( key )
   AppendToTypingBuffer( typingAction )
-  if CurrentlyRepeatingAction {
-    StopRepeating()
-    DebugMsg( "press event stop repeating")
-  } else {
-    StartRepeating( key, typingAction, true )
-    DebugMsg("start repeatig typingAction: " typingAction)
-  }
+
+  StopRepeating() ; only repeat between key press/release events
 
   binding := GetCurrentBinding( key )
 
@@ -290,7 +284,7 @@ DoKeyPress( key ){
       ; actions in DefaultMode mode indicate typing
       ActivateMode( TypingMode )
     }
-    else if ModeTransitionStarted { ; prepare for different contingencies
+    else if InModeTransition { ; prepare for different contingencies
       ; remember this action and perform it if this key is immediately released
       SetModAction( key, action )
     }
@@ -304,12 +298,12 @@ DoKeyPress( key ){
 }
 
 
-
 ReleaseKeyEvent( key ){
+  SetNow()
   DebugMsg( StrPad( "R> " key, 14) " " MakeStatusMsg(), false )
 
   DeactivateKey( key )
-  SetNow()
+  ReleaseInactiveModifiers() ; release any modifiers that were deactivated
 
   ; stop repeating upon any action
   StopRepeating()
@@ -319,15 +313,12 @@ ReleaseKeyEvent( key ){
 
   if ( key == QueuedModKey ) { ; perform action on release
     DoModAction()
-    ModeTransitionStarted := false ; confirm user wants this mode
+    InModeTransition := false ; confirm user wants this mode
   }
-  else if ModeTransitionStarted { ; release actions other than the queued action
+  else if InModeTransition { ; release actions other than the queued action
                                   ; during transition phase are assumed to indicate typing
     ActivateMode( TypingMode )
   }
-  ;else if ( modifiers := binding["Modifiers"] ) { ; deactivate modKey
-  ;  DeactivateKey( key )
-  ;}
 
   ; if this was the last key released, activate DefaultMode
   ;PrunePressedKeys()
@@ -356,16 +347,13 @@ ActivateMode( newMode ) {
     return
   }
 
-  ;; always stop key repetition on mode change
-  ;StopRepeating()
-  ;DebugMsg("activate mode stop repeating")
-
   ; if we are entering base mode, flush the TypingBuffer
   if ( newMode == TypingMode ){
     FlushTypingBuffer()
   }
   if ( newMode == DefaultMode ){
     ClearBuffers()
+    DeactivateAllModKeys()
     ;DeactivateAllKeys()
   }
 
@@ -379,20 +367,23 @@ ActivateMode( newMode ) {
   }
   oldModkeys := DeactivateAllModKeys() ; doesn't deactivate the keys themselves
   CurrentMode := newMode
+
   activatedModifiers := ActivateModKeys( persistingModKeys )
+
+  if ( newMode == TypingMode or newMode == BaseModMode
+    or newMode == DefaultMode ){
+    GoSub EndModeTransition
+    PressActiveModifiers()
+  }
+  else {
+    InModeTransition := Now()
+    DelayEndModeTransition()
+  }
 
   ;DebugMsg( "  mode change key transition: ("
   ;  . mkString(werePressed) ")(" mkString(oldModkeys) ") - [" mkString(keysToDeactivate) "] => "
   ;  . "(" mkString(persistingModKeys) ")(" mkString(activatedModifiers) ")" )
 
-  if ( newMode == TypingMode or newMode == BaseModMode
-    or newMode == DefaultMode ){
-    GoSub EndModeTransition
-  }
-  else {
-    ModeTransitionStarted := Now()
-    DelayEndModeTransition()
-  }
 }
 
 ; Action Buffer Helpers
@@ -412,17 +403,18 @@ AppendToTypingBuffer( typingAction ){
 FlushTypingBuffer( typingActions := "" ){
   global TypingBuffer
   actions := TypingBuffer . typingActions
+  ClearBuffers() ; TODO: use Object.Remove() for atomicity if necessary
 
   if actions {
     DebugMsg("**type: " actions )
-    Send {Blind}%actions%
+    Send %actions%
   }
-  ClearBuffers()
   return actions
 }
 
 DoAction( action ){
-  prefix := GetActionPrefix()
+  ;prefix := GetActionPrefix()
+  PressActiveModifiers()
   full_action := prefix . action
   DebugMsg("**send: " full_action )
   Send % full_action
@@ -453,26 +445,42 @@ ClearBuffers(){
 ; Key Status handlers
 ;===============================================================
 
-ReleaseInactiveModifiers(){
-  PrunePressedKeys()
-  releasedModifiers := {}
+PressActiveModifiers() {
+  toPress := {}
 
-  for modifier, prx in GetAllModifiers() {
-    activeModKeys := GetActiveModKeysFor( modifier )
-    modifierActive := GetKeyState( modifier )
-
-    if modifierActive and IsEmpty( activeModKeys )
-    { ; release modifier
-      releasedModifiers[modifier] := true
+  for modifier, prx in GetAllActiveModifiers() {
+    modifierPressed := GetKeyState( modifier )
+    if not modifierPressed {
+      toPress[modifier] := true
     }
   }
-  if !IsEmpty( releasedModifiers ) {
-    releaseModifiersStr := MakeReleaseModifiers( releasedModifiers )
-    DebugMsg( "release inactive: " modifier )
+  if not IsEmpty( toPress ) {
+    pressModifiersStr := MakePressModifiersStr( toPress )
+    DebugMsg( "press active: " modifier )
+    DoModifierChange( pressModifiersStr )
+  }
+
+  return toPress
+}
+ReleaseInactiveModifiers(){
+  PrunePressedKeys()
+  toRelease := {}
+
+  for modifier, t in GetAllModifiers() {
+    activeModKeys := GetActiveModKeysFor(modifier)
+    modifierPressed := GetKeyState(modifier)
+
+    if modifierPressed and isEmpty(activeModKeys) {
+      toRelease[modifier] := true
+    }
+  }
+  if not IsEmpty( toRelease ) {
+    releaseModifiersStr := MakeReleaseModifiersStr( toRelease )
+    DebugMsg( "release inactive: " releaseModifiersStr )
     DoModifierChange( releaseModifiersStr )
   }
 
-  return releasedModifiers
+  return toRelease
 }
 
 PrunePressedKeys(){
@@ -514,6 +522,7 @@ ActivateModKey( modKey, modifiers := false ){
     activatedModifiers[modifier] := true
   }
   ModifiersActiveMap["", modKey] := true
+
   return activatedModifiers
 }
 
@@ -526,9 +535,10 @@ DeactivateKeys( modKeys ){
   }
   return deactivatedModifiers
 }
+
 DeactivateKey( modKey ){
   global ModifiersActiveMap
-  SetKeyReleased( modKey )
+  setkeyreleased( modkey )
   deactivatedModifiers := {}
   for modifier, activeModKeys in ModifiersActiveMap {
     if activeModKeys[modKey] {
@@ -541,7 +551,15 @@ DeactivateKey( modKey ){
   for modifier, t in deactivatedModifiers {
     ModifiersActiveMap.Remove(modifier)
   }
+
   return deactivatedModifiers
+}
+
+GetAllActiveModifiers(){
+  global ModifiersActiveMap
+  modifiers := ModifiersActiveMap.Clone()
+  modifiers.Remove("")
+  return modifiers
 }
 
 GetActiveModKeysFor(modifier){
@@ -566,9 +584,12 @@ ModKeyIsActive(modKey){
 
 DeactivateAllModKeys(){
   global ModifiersActiveMap
-  active := ModifiersActiveMap
+  wereActive := ModifiersActiveMap
   ModifiersActiveMap := {}
-  return active
+  for modifier, modKeys in wereActive {
+    SetKeysReleased( modKeys )
+  }
+  return wereActive
 }
 
 DeactivateAllKeys(){
@@ -654,6 +675,20 @@ GetActionPrefix(){
   return prefix
 }
 
+PressModifiers( modifiers ){
+  DoModifierChange( MakePressModifiersStr( modifiers ) )
+}
+ReleaseModifiers( modifiers ){
+  DoModifierChange( MakeReleaseModifiersStr( modifiers ) )
+}
+
+MakePressModifiersStr( modifiers ){
+  return mkString( modifiers, "", "{", " Down}")
+}
+
+MakeReleaseModifiersStr( modifiers ){
+  return mkString( modifiers, "", "{", " Up}")
+}
 
 ; Generic Getters and Setters
 ;===============================================================
@@ -707,14 +742,6 @@ ModifierPrefix_Display( mode := ""  ){
 
 ; Helper Functions
 ;===============================================================
-
-MakePressModifiersStr( modifiers ){
-  return mkString( modifiers, "", "{", " Down}")
-}
-
-MakeReleaseModifiers( modifiers ){
-  return mkString( modifiers, "", "{", " Up}")
-}
 
 mkString( obj, separator := ",", before := "", after := "" ){
   str := ""
