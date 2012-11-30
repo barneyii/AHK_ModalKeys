@@ -25,7 +25,7 @@ SendMode Input
 ;===============================================================
 
 global InactivityTimeout := 5000 ; enter DefaultMode after this long of inactivity
-global TypingModeTimeout := 200  ; InactivityTimeout while in TypingMode
+global TypingModeTimeout := 150  ; InactivityTimeout while in TypingMode
 
 ; determines timeout of InModeTransition
 ; when this event occurs, the QueuedModAction is performed if present
@@ -41,7 +41,7 @@ global RepetitionDelay := 50
 ;===============================================================
 
 ; Debugging
-global Debug              := true
+global Debug := false
 
 ; Mode Names
 global DefaultMode := "DefaultMode"
@@ -122,19 +122,6 @@ MakeModeModModifiersMap( KeyBindings ){
 ;===============================================================
 
 ; AutoHotkey key bindings
-PrintScreen & F1::
-  for k, v in KeyBindings["RFuncMode"]["u"] {
-    Send % k ":" v "\n"
-    for k2, v2 in v {
-      Send % "\t" k2 ":" v2 "\n"
-    }
-  }
-  return
-PrintScreen & F2:: Send % mkString( [] )
-
-PrintScreen & F3:: Send {Blind}{LWin DownTemp}1
-PrintScreen & F4:: Send {Blind}{LWin Down}1
-
 PrintScreen & F8::  ListVars
 PrintScreen & F9::  KeyHistory
 PrintScreen & F10:: ListLines
@@ -180,8 +167,7 @@ DoRepetitions:
   return
 
 StartRepeating( key, action, typing := false ){
-  DebugMsg("start repeating: " key " - " action)
-  ;DelayEnterDefaultMode()
+  ;DebugMsg("start repeating: " key " - " action)
   CurrentlyRepeatingKey := key
   CurrentlyRepeatingAction := action
   SetTimer, DoRepetitions, % FirstRepetitionDelay
@@ -190,7 +176,7 @@ StartRepeating( key, action, typing := false ){
 
 StopRepeating(){
   if CurrentlyRepeatingAction {
-    DebugMsg("stop repeating: " CurrentlyRepeatingKey " - " CurrentlyRepeatingAction)
+    ;DebugMsg("stop repeating: " CurrentlyRepeatingKey " - " CurrentlyRepeatingAction)
   }
   CurrentlyRepeatingAction := ""
   CurrentlyRepeatingKey := ""
@@ -203,7 +189,7 @@ StopRepeating(){
 EndModeTransition:
   InModeTransition := false
   SetTimer EndModeTransition, Off
-  DebugMsg( CurrentMode " Mode Transition over")
+  ;DebugMsg( CurrentMode " Mode Transition over")
   return
 
 DelayEndModeTransition(){
@@ -213,7 +199,7 @@ DelayEndModeTransition(){
 EnterDefaultMode:
   if ( not A_IsSuspended ){
     if ( CurrentMode != DefaultMode ){
-      DebugMsg( "enter DefaultMode from " CurrentMode )
+      ;DebugMsg( "enter DefaultMode from " CurrentMode )
       ActivateMode( DefaultMode )
     }
     DelayEnterDefaultMode()
@@ -229,7 +215,7 @@ DelayEnterDefaultMode(){
     newWait := InactivityTimeout
   }
 
-  DebugMsg( CurrentMode ": delaying DefaultMode mode " currentWait "ms => " newWait "ms")
+  ;DebugMsg( CurrentMode ": delaying DefaultMode mode " currentWait "ms => " newWait "ms")
   SetTimer EnterDefaultMode, % newWait
   currentlyScheduled := A_TickCount + newWait
 }
@@ -248,7 +234,6 @@ PressKeyEvent( key ){
 
     SetKeyPressed( key )
     SetNow()
-
 
     ; use separate function for performing actions so it can be called separately
     DoKeyPress( key )
@@ -307,7 +292,6 @@ ReleaseKeyEvent( key ){
 
   ; stop repeating upon any action
   StopRepeating()
-  DebugMsg("release event stop repeating")
 
   binding := GetCurrentBinding( key )
 
@@ -343,7 +327,7 @@ ActivateMode( newMode ) {
   ;DebugMsg( "activating mode: " newMode )
 
   if ( oldMode == newMode ) {
-    DebugMsg( "oldMode(" oldMode ") = newMode(" newMode ")" )
+    DebugMsg( "[bug] oldMode(" oldMode ") = newMode(" newMode ")" )
     return
   }
 
@@ -413,13 +397,11 @@ FlushTypingBuffer( typingActions := "" ){
 }
 
 DoAction( action ){
-  ;prefix := GetActionPrefix()
   PressActiveModifiers()
-  full_action := prefix . action
-  DebugMsg("**send: " full_action )
-  Send % full_action
+  DebugMsg("**send: " action )
+  Send % action
   ClearBuffers()
-  return full_action
+  return action
 }
 
 DoModAction(){
@@ -456,7 +438,6 @@ PressActiveModifiers() {
   }
   if not IsEmpty( toPress ) {
     pressModifiersStr := MakePressModifiersStr( toPress )
-    DebugMsg( "press active: " modifier )
     DoModifierChange( pressModifiersStr )
   }
 
@@ -476,7 +457,6 @@ ReleaseInactiveModifiers(){
   }
   if not IsEmpty( toRelease ) {
     releaseModifiersStr := MakeReleaseModifiersStr( toRelease )
-    DebugMsg( "release inactive: " releaseModifiersStr )
     DoModifierChange( releaseModifiersStr )
   }
 
@@ -599,7 +579,6 @@ DeactivateAllKeys(){
   }
   ModifiersActiveMap := {}
   PressedKeys := {}
-  ;ReleaseInactiveModifiers()
   return active
 }
 
