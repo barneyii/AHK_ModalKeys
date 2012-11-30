@@ -81,14 +81,16 @@
 
     "f":    { "Action": "{Escape}"       },
     "g":    { "Action": "{Home}"         },
-    "l":    { "Action": "{End}"          },
     "c":    { "Action": "{PgUp}"         },
     "r":    { "Action": "{PgDn}"         },
+    "l":    { "Action": "{End}"          },
+    "/":    { "Action": "{Enter}"        },
+
+    "d":    { "Action": "{Backspace}"    },
     "h":    { "Action": "{Left}"         },
-    "s":    { "Action": "{Right}"        },
     "t":    { "Action": "{Up}"           },
     "n":    { "Action": "{Down}"         },
-    "d":    { "Action": "{Backspace}"    },
+    "s":    { "Action": "{Right}"        },
     "-":    { "Action": "{Delete}"       },
     "b":    { "Action": "{x}"            }
 }
