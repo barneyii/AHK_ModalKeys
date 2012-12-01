@@ -27,8 +27,11 @@ SendMode Input
 global InactivityTimeout := 5000 ; enter DefaultMode after this long of inactivity
 global TypingModeTimeout := 150  ; InactivityTimeout while in TypingMode
 
-; determines timeout of InModeTransition
-; when this event occurs, the QueuedModAction is performed if present
+; determines the duration of the mode transition period
+; during the transition period, key presses do nothing immediately
+; When a ModKey is pressed in DefaultMode, it must be released before
+; the transition period ends, without pressing any other keys, in order to send
+; it's normal typing action.
 global ModeActivationDelay := 300
 
 ; Key Repetition
@@ -204,6 +207,7 @@ EnterDefaultMode:
     }
     DelayEnterDefaultMode()
   }
+  Tooltip % "", 0, 0, 1
   return
 DelayEnterDefaultMode(){
   static currentlyScheduled
@@ -238,6 +242,7 @@ PressKeyEvent( key ){
     ; use separate function for performing actions so it can be called separately
     DoKeyPress( key )
 
+    UpdateStatusTooltip()
     DebugMsg( StrPad("<P " key, 14) " " MakeStatusMsg(), false )
   }
 }
@@ -315,6 +320,7 @@ ReleaseKeyEvent( key ){
     }
   }
 
+  UpdateStatusTooltip()
   DebugMsg( StrPad( "R< " key, 14) " " MakeStatusMsg(), false )
 }
 
@@ -827,3 +833,6 @@ OffsetTooltip(msg, rowOffset := 0){
   Tooltip % msg, 0, 18*4*rowOffset, rowOffset+1
 }
 
+UpdateStatusTooltip(){
+  Tooltip % ModifierPrefix_Display() mkString( GetPressedKeys() ), 0, 0, 1
+}

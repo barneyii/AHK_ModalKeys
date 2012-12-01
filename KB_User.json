@@ -4,12 +4,13 @@
     ",":       { "SetMode": "RFuncMode"   },
     ".":       { "SetMode": "RFuncMode"   },
     "p":       { "SetMode": "RFuncMode"   },
+    "y":       { "SetMode": "RFuncMode"   },
 
-    "a":       { "SetMode": "RNavMode"   },
-    "o":       { "SetMode": "RNavMode"   },
-    "e":       { "SetMode": "RNavMode"   },
-    "u":       { "SetMode": "RNavMode"   },
-    "i":       { "SetMode": "RNavMode"   },
+    "a":       { "SetMode": "RNavMode"    },
+    "o":       { "SetMode": "RNavMode"    },
+    "e":       { "SetMode": "RNavMode"    },
+    "u":       { "SetMode": "RNavMode"    },
+    "i":       { "SetMode": "RNavMode"    },
 
     "f":       { "SetMode": "LFuncMode"   },
     "g":       { "SetMode": "LFuncMode"   },
@@ -27,7 +28,7 @@
 
 
 "LFuncMode": {
-    "f":     { "Modifiers": ["RWin"]               },
+    "f":     { "Modifiers": ["LWin"]               },
     "g":     { "SetMode":    "LFuncMode"           },
     "c":     { "Modifiers": ["RControl"]           },
     "r":     { "Modifiers": ["RAlt"]               },
@@ -47,7 +48,7 @@
 },
 
 "LModMode": {
-    "d":     { "Modifiers": ["RWin"]               },
+    "d":     { "Modifiers": ["LWin"]               },
     "h":     {   "SetMode":  "LFuncMode"           },
     "t":     { "Modifiers": ["RControl"]           },
     "n":     { "Modifiers": ["RAlt"]               },

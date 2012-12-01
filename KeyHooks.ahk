@@ -1,5 +1,7 @@
 #EscapeChar \
 
+#IfWinNotActive ahk_class VMUIFrame
+
 ; Modifiers
   $*LControl::      PressKeyEvent(   "LControl" )
   $*LControl Up::   ReleaseKeyEvent( "LControl" )
