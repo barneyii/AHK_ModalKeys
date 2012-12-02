@@ -24,7 +24,7 @@ SendMode Input
 ; Keyboard behaviour settings
 ;===============================================================
 
-global InactivityTimeout := 5000 ; enter DefaultMode after this long of inactivity
+global InactivityTimeout := 10000 ; enter DefaultMode after this long of inactivity
 global TypingModeTimeout := 150  ; InactivityTimeout while in TypingMode
 
 ; determines the duration of the mode transition period
@@ -33,6 +33,10 @@ global TypingModeTimeout := 150  ; InactivityTimeout while in TypingMode
 ; the transition period ends, without pressing any other keys, in order to send
 ; it's normal typing action.
 global ModeActivationDelay := 300
+
+; the maximum number of non-modKey keys that may be held down
+; during Mode Transition before TypingMode will be activated
+global HotkeyPressesPermittedDuringModeTransition := 2
 
 ; Key Repetition
 global EnableKeyRepetition := true
@@ -72,8 +76,8 @@ global ModeModModifiersMap := MakeModeModModifiersMap(KeyBindings)
 global ModifiersActiveMap := {} ; Map[modifier => Map[modKey => true] ]
 global PressedKeys := {}
 global TypingBuffer := ""
-global QueuedModAction := ""
-global QueuedModKey := ""
+global QueuedModActions := []
+global QueuedModKeys := {}
 global InModeTransition := 0
 global CurrentlyRepeatingAction := ""
 global CurrentlyRepeatingKey := ""
@@ -257,7 +261,7 @@ DoKeyPress( key ){
 
   binding := GetCurrentBinding( key )
 
-  if QueuedModAction { ; already a queued modAction -> assume typing intended
+  if QueuedModActionsLimitReached() { ; already a queued modAction -> assume typing intended
     ActivateMode( TypingMode )
   }
   ; do Mode Change
@@ -276,7 +280,7 @@ DoKeyPress( key ){
     }
     else if InModeTransition { ; prepare for different contingencies
       ; remember this action and perform it if this key is immediately released
-      SetModAction( key, action )
+      QueueModAction( key, action )
     }
     else { ; We are now confidently in this mode: send Action immediately
       DoAction( action )
@@ -300,8 +304,8 @@ ReleaseKeyEvent( key ){
 
   binding := GetCurrentBinding( key )
 
-  if ( key == QueuedModKey ) { ; perform action on release
-    DoModAction()
+  if QueuedModKeys[key] { ; perform queued modActions on release
+    DoQueuedModActions()
     InModeTransition := false ; confirm user wants this mode
   }
   else if InModeTransition { ; release actions other than the queued action
@@ -410,23 +414,33 @@ DoAction( action ){
   return action
 }
 
-DoModAction(){
-  return DoAction( QueuedModAction )
+DoQueuedModActions(){
+  return DoAction( mkString(QueuedModActions, "") )
 }
 
-SetModAction( key, modAction ){
-  if QueuedModAction {
-    DebugMsg("[bug] changed queued modAction: " QueuedModKey ":" QueuedModAction " => " key ":" modAction, false )
+ModActionsQueued(){
+  return QueuedModActions.MaxIndex()
+}
+
+QueuedModActionsLimitReached(){
+  return SizeOf(QueuedModActions) >= HotkeyPressesPermittedDuringModeTransition
+}
+
+QueueModAction( key, modAction ){
+  if QueuedModActionsLimitReached() {
+    DebugMsg("[bug] too many queued modActions: "
+      . mkString(QueuedModKeys) ":" mkString(QueuedModActions)
+      . " => " key ":" modAction, false )
+    return
   }
-  QueuedModKey := key
-  QueuedModAction := modAction
-  ; TODO set timer for expiry
+  QueuedModKeys[key] := true
+  QueuedModActions.Insert( modAction )
 }
 
 ClearBuffers(){
   TypingBuffer := ""
-  QueuedModAction := ""
-  QueuedModKey := false
+  QueuedModActions := []
+  QueuedModKeys := {}
 }
 
 
@@ -559,7 +573,7 @@ GetAllActiveModKeys(){
 }
 
 ActiveModKeysCount(){
-  n := Count( GetAllActiveModKeys() )
+  n := SizeOf( GetAllActiveModKeys() )
   return n
 }
 
@@ -619,7 +633,7 @@ GetPressedKeys(){
 }
 
 PressedKeyCount(){
-  return Count(GetPressedKeys())
+  return SizeOf(GetPressedKeys())
 }
 
 NoPressedKeys(){
@@ -635,7 +649,7 @@ GetPressedNormalKeys(){
 }
 
 PressedNormalKeyCount(){
-  return Count(GetPressedNormalKeys())
+  return SizeOf(GetPressedNormalKeys())
 }
 
 GetAllModifiers(){
@@ -718,10 +732,10 @@ ModifierPrefix_Display( mode := ""  ){
           . ( GetKeyState("LControl", mode ) ? "^" : "" )
           . ( GetKeyState("LShift", mode ) ? "+" : "" )
           . ( GetKeyState("LWin", mode ) ? "#" : "" )
-          . ( GetKeyState("RAlt", mode ) ? "_!" : "" )
-          . ( GetKeyState("RControl", mode ) ? "_^" : "" )
-          . ( GetKeyState("RShift", mode ) ? "_+" : "" )
-          . ( GetKeyState("RWin", mode ) ? "_#" : "" )
+          . ( GetKeyState("RAlt", mode ) ? ".!" : "" )
+          . ( GetKeyState("RControl", mode ) ? ".^" : "" )
+          . ( GetKeyState("RShift", mode ) ? ".+" : "" )
+          . ( GetKeyState("RWin", mode ) ? ".#" : "" )
   return prefix
 }
 
@@ -752,7 +766,7 @@ IsEmpty( obj ){
   return empty
 }
 
-Count( obj ){
+SizeOf( obj ){
   n := 0
   for k, v in obj {
     n++
@@ -818,10 +832,10 @@ DebugMsg( msg, prepend_space := true ){
   }
 }
 MakeStatusMsg(){
-  global TypingBuffer, QueuedModAction
+  global TypingBuffer, QueuedModActions
   if Debug {
     mode := StrPad(CurrentMode, 12)
-    buffers := (TypingBuffer or QueuedModAction) ? "<" TypingBuffer . " . " QueuedModAction "> " : ""
+    buffers := (TypingBuffer or ModActionsQueued()) ? "<" TypingBuffer . " . " mkString(QueuedModActions, "") "> " : ""
     prefixes := ( ModifierPrefix_Display() or GetActionPrefix() )
         ? "{" ModifierPrefix_Display() " . " GetActionPrefix() "}" : ""
     keys := " active: " mkString( GetPressedKeys() )
@@ -834,5 +848,5 @@ OffsetTooltip(msg, rowOffset := 0){
 }
 
 UpdateStatusTooltip(){
-  Tooltip % ModifierPrefix_Display() mkString( GetPressedKeys() ), 0, 0, 1
+  Tooltip % ModifierPrefix_Display() " " mkString( GetPressedKeys(), " " ), 0, 0, 1
 }
