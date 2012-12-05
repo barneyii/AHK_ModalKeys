@@ -51,6 +51,8 @@ global RepetitionDelay := 50
 ; Debugging
 global Debug := false
 
+SetThreadInterruptability()
+
 ; Mode Names
 global DefaultMode := "DefaultMode"
 global TypingMode  := "TypingMode"
@@ -136,6 +138,7 @@ PrintScreen & F8::  ListVars
 PrintScreen & F9::  KeyHistory
 PrintScreen & F10:: ; toggle debug
   Debug := not Debug
+  SetThreadInterruptability()
   DeactivateAllKeys()
   ClearTooltip()
   return
@@ -237,9 +240,9 @@ PressKeyEvent( key ){
   DelayEnterDefaultMode()
 
   if KeyIsUnpressed( key ) { ; disable hardware key-repetition
-    DebugMsg( StrPad("P> " key, 14) " " MakeStatusMsg(), false )
     SetNow()
     activeModifiers := GetAllActiveModifiers()
+    DebugMsg( StrPad("P> " key, 14) " " MakeStatusMsg(), false )
     SetKeyPressed( key )
 
     ; use separate function for performing actions so it can be called separately
@@ -301,9 +304,9 @@ DoKeyPress( key, activeModifiers ){
 
 
 ReleaseKeyEvent( key ){
-  DebugMsg( StrPad( "R> " key, 14) " " MakeStatusMsg(), false )
   SetNow()
   activeModifiers := GetAllActiveModifiers()
+  DebugMsg( StrPad( "R> " key, 14) " " MakeStatusMsg(), false )
   DeactivateKey( key )
 
   ReleaseInactiveModifiers() ; release any modifiers that were deactivated
@@ -847,6 +850,13 @@ RemoveIntersection( ByRef set1, ByRef set2 ){
 
 ; Debugging
 ;===============================================================
+SetThreadInterruptability(){
+  if Debug {
+    Thread, Interrupt, 60, 2000
+  } else {
+    Thread, Interrupt, 20, 2000
+  }
+}
 
 DebugMsg( msg, prepend_space := true ){
   logFile := "debug.log"
