@@ -2,7 +2,7 @@
   "LControl":       { "Modifiers": ["LControl"]  },
   "LShift":         { "Modifiers": ["LShift"]    },
   "LAlt":           { "Modifiers": ["LAlt"]      },
-  "LWin":           { "Modifiers": ["LWin"]      , "HoldModifiers": true },
+  "LWin":           { "Modifiers": ["LWin"]      },
   "RControl":       { "Modifiers": ["RControl"]  },
   "RShift":         { "Modifiers": ["RShift"]    },
   "RAlt":           { "Modifiers": ["RAlt"]      }

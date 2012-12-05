@@ -1,5 +1,35 @@
 {
+"BaseModMode": {
+    "LControl":  { "Modifiers": ["LControl"]  },
+    "LShift":    { "Modifiers": ["LShift"]    },
+    "LAlt":      { "Modifiers": ["LAlt"]      },
+    "LWin":      { "Modifiers": ["LWin"]      },
+    "RControl":  { "Modifiers": ["RControl"]  },
+    "RShift":    { "Modifiers": ["RShift"]    },
+    "RAlt":      { "Modifiers": ["RAlt"]      },
+
+    "'":         { "Action": "q"              },
+    ",":         { "Action": "w"              },
+    ".":         { "Action": "s"              },
+    "p":         { "Action": "p"              },
+    "y":         { "Action": "y"              },
+
+    "a":         { "Action": "a"              },
+    "o":         { "Action": "o"              },
+    "e":         { "Action": "e"              },
+    "u":         { "Action": "u"              },
+    "i":         { "Action": "i"              },
+
+    ";":         { "Action": "z"              },
+    "q":         { "Action": "x"              },
+    "j":         { "Action": "c"              },
+    "k":         { "Action": "v"              },
+    "x":         { "Action": "x"              }
+},
+
 "DefaultMode": {
+    "`":      { "SetMode": "WinNMode"     },
+
     "'":      { "SetMode": "RFuncMode"    },
     ",":      { "SetMode": "RFuncMode"    },
     ".":      { "SetMode": "RFuncMode"    },
@@ -28,6 +58,9 @@
     "-":      { "SetMode": "LModMode"     }
 },
 
+"WinNMode": {
+    "`":     { "Modifiers": ["RControl", "LWin"]   }
+},
 
 "RFuncMode": {
     "'":    { "Modifiers": ["LShift"]    },
