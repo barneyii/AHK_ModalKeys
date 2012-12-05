@@ -208,7 +208,6 @@ EnterDefaultMode:
     }
     DelayEnterDefaultMode()
   }
-  Tooltip % "", 0, 0, 1
   return
 DelayEnterDefaultMode(){
   static currentlyScheduled
@@ -845,6 +844,11 @@ OffsetTooltip(msg, rowOffset := 0){
   Tooltip % msg, 0, 18*4*rowOffset, rowOffset+1
 }
 
+RemoveStatusTooltip:
+  Tooltip % "", 0, 0, 1
+  return
+
 UpdateStatusTooltip(){
-  Tooltip % ModifierPrefix_Display() " " mkString( GetPressedKeys(), " " ), 0, 0, 1
+  Tooltip % CurrentMode " " ModifierPrefix_Display() "" mkString( GetPressedKeys(), "," ), 0, 0, 1
+  SetTimer, RemoveStatusTooltip, % 2000
 }
