@@ -25,8 +25,8 @@ SendMode Input
 ;===============================================================
 
 global InactivityTimeout := 10000 ; enter DefaultMode after this long of inactivity
-global TypingModeTimeout := 150  ; InactivityTimeout while in TypingMode
-global DoubleTabTimeout := 150
+global TypingModeTimeout := 50  ; InactivityTimeout while in TypingMode
+global DoubleTabTimeout := 300
 
 ; determines the duration of the mode transition period
 ; during the transition period, key presses do nothing immediately
@@ -49,7 +49,7 @@ global RepetitionDelay := 50
 ;===============================================================
 
 ; Debugging
-global Debug := true
+global Debug := false
 
 ; Mode Names
 global DefaultMode := "DefaultMode"
@@ -80,6 +80,8 @@ global TypingBuffer := ""
 global QueuedModActions := []
 global QueuedModKeys := {}
 global InModeTransition := 0
+global LastAction := ""
+global LastActionTime := 0
 global CurrentlyRepeatingAction := ""
 global CurrentlyRepeatingKey := ""
 
@@ -258,7 +260,15 @@ DoKeyPress( key, activeModifiers ){
 
   binding := GetCurrentBinding( key )
 
-  if QueuedModActionsLimitReached() { ; already a queued modAction -> assume typing intended
+  ;DebugMsg("action: " typingAction " last: " LastAction " " Now() - LastActionTime "ms ago")
+  ; do double-tap action (same key pressed twice quickly enough) on press
+  if ( CurrentMode == DefaultMode
+      and LastAction == typingAction
+      and ( Now() - LastActionTime < DoubleTabTimeout ) ){
+    ActivateMode( TypingMode )
+    StartRepeating( key, typingAction )
+  }
+  else if QueuedModActionsLimitReached() { ; already a queued modAction -> assume typing intended
     ActivateMode( TypingMode )
   }
   ; do Mode Change
@@ -271,8 +281,9 @@ DoKeyPress( key, activeModifiers ){
   }
   ; do Action
   else if ( action := binding["Action"] ) {
+
     if ( CurrentMode == DefaultMode ){
-      ; actions in DefaultMode mode indicate typing
+      ; non-modifier-key actions in DefaultMode mode indicate typing
       ActivateMode( TypingMode )
     }
     else if InModeTransition { ; prepare for different contingencies
@@ -400,16 +411,19 @@ FlushTypingBuffer( typingActions := "" ){
   if actions {
     DebugMsg("**type: " actions )
     Send {Blind}%actions%
+    LastAction := actions
+    LastActionTime := Now()
   }
   return actions
 }
 
 DoAction( action, activeModifiers ){
   PressUnpressedModifiers( activeModifiers )
-  ;Sleep 10
   DebugMsg("**send: " action )
   Send {Blind}%action%
   ClearBuffers()
+  LastAction := action
+  LastActionTime := Now()
   return action
 }
 
