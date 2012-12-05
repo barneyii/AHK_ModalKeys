@@ -48,7 +48,7 @@ global RepetitionDelay := 50
 ;===============================================================
 
 ; Debugging
-global Debug := false
+global Debug := true
 
 ; Mode Names
 global DefaultMode := "DefaultMode"
@@ -131,17 +131,16 @@ MakeModeModModifiersMap( KeyBindings ){
 ; AutoHotkey key bindings
 PrintScreen & F8::  ListVars
 PrintScreen & F9::  KeyHistory
-PrintScreen & F10:: ListLines
+PrintScreen & F10:: ; toggle debug
+  Debug := not Debug
+  DeactivateAllKeys()
+  ClearTooltip()
+  return
 PrintScreen & F11::    ; Reload
   DeactivateAllKeys()
   Reload
   return
 PrintScreen & F12::Suspend
-PrintScreen & Delete:: ; toggle debug
-  Debug := not Debug
-  DeactivateAllKeys()
-  ClearTooltip()
-  return
 PrintScreen:: Send {PrintScreen} ; send PrintScreen on key up
 
 
