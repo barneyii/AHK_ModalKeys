@@ -26,6 +26,7 @@ SendMode Input
 
 global InactivityTimeout := 10000 ; enter DefaultMode after this long of inactivity
 global TypingModeTimeout := 150  ; InactivityTimeout while in TypingMode
+global DoubleTabTimeout := 150
 
 ; determines the duration of the mode transition period
 ; during the transition period, key presses do nothing immediately
@@ -161,7 +162,7 @@ ClearTooltip(){
 DoRepetitions:
   if ( EnableKeyRepetition and not A_IsSuspended ) {
     if (GetKeyState(CurrentlyRepeatingKey, "P")){
-      DoAction( CurrentlyRepeatingAction ) ; don't consider key-holding as normal typing
+      DoAction( CurrentlyRepeatingAction, GetAllActiveModifiers() ) ; don't consider key-holding as normal typing
       SetTimer, DoRepetitions, % RepetitionDelay
     } else {
       DebugMsg("[bug] repetition called on unpressed key: " CurrentlyRepeatingKey)
@@ -170,7 +171,7 @@ DoRepetitions:
   }
   return
 
-StartRepeating( key, action, typing := false ){
+StartRepeating( key, action ){
   ;DebugMsg("start repeating: " key " - " action)
   CurrentlyRepeatingKey := key
   CurrentlyRepeatingAction := action
@@ -235,18 +236,18 @@ PressKeyEvent( key ){
 
   if KeyIsUnpressed( key ) { ; disable hardware key-repetition
     DebugMsg( StrPad("P> " key, 14) " " MakeStatusMsg(), false )
-
-    SetKeyPressed( key )
     SetNow()
+    activeModifiers := GetAllActiveModifiers()
+    SetKeyPressed( key )
 
     ; use separate function for performing actions so it can be called separately
-    DoKeyPress( key )
+    DoKeyPress( key, activeModifiers )
 
     UpdateStatusTooltip()
     DebugMsg( StrPad("<P " key, 14) " " MakeStatusMsg(), false )
   }
 }
-DoKeyPress( key ){
+DoKeyPress( key, activeModifiers ){
   ReleaseInactiveModifiers()
 
   ; add typingKey to queue in case we retroactively need to switch to typingMode
@@ -279,20 +280,21 @@ DoKeyPress( key ){
       QueueModAction( key, action )
     }
     else { ; We are now confidently in this mode: send Action immediately
-      DoAction( action )
+      DoAction( action, activeModifiers )
     }
 
     ; start repeating action
-    StartRepeating( key, action ) ; try doing it always
+    StartRepeating( key, action )
   }
 }
 
 
 ReleaseKeyEvent( key ){
-  SetNow()
   DebugMsg( StrPad( "R> " key, 14) " " MakeStatusMsg(), false )
-
+  SetNow()
+  activeModifiers := GetAllActiveModifiers()
   DeactivateKey( key )
+
   ReleaseInactiveModifiers() ; release any modifiers that were deactivated
 
   ; stop repeating upon any action
@@ -301,7 +303,7 @@ ReleaseKeyEvent( key ){
   binding := GetCurrentBinding( key )
 
   if QueuedModKeys[key] { ; perform queued modActions on release
-    DoQueuedModActions()
+    DoQueuedModActions( activeModifiers )
     InModeTransition := false ; confirm user wants this mode
   }
   else if InModeTransition { ; release actions other than the queued action
@@ -402,8 +404,9 @@ FlushTypingBuffer( typingActions := "" ){
   return actions
 }
 
-DoAction( action ){
-  PressActiveModifiers()
+DoAction( action, activeModifiers ){
+  PressUnpressedModifiers( activeModifiers )
+  ;Sleep 10
   DebugMsg("**send: " action )
   Send {Blind}%action%
   ClearBuffers()
@@ -411,8 +414,8 @@ DoAction( action ){
 }
 
 
-DoQueuedModActions(){
-  return DoAction( mkString(QueuedModActions, "") )
+DoQueuedModActions( activeModifiers ){
+  return DoAction( mkString(QueuedModActions, ""), activeModifiers )
 }
 
 ModActionsQueued(){
@@ -444,10 +447,10 @@ ClearBuffers(){
 ; Key Status handlers
 ;===============================================================
 
-PressActiveModifiers() {
+PressUnpressedModifiers( modifiers ){
   toPress := {}
 
-  for modifier, prx in GetAllActiveModifiers() {
+  for modifier, prx in modifiers {
     modifierPressed := GetKeyState( modifier )
     if not modifierPressed {
       toPress[modifier] := true
@@ -460,6 +463,11 @@ PressActiveModifiers() {
 
   return toPress
 }
+
+PressActiveModifiers() {
+  PressUnpressedModifiers( GetAllActiveModifiers() )
+}
+
 ReleaseInactiveModifiers(){
   PrunePressedKeys()
   toRelease := {}
@@ -554,7 +562,10 @@ DeactivateKey( modKey ){
 
 GetAllActiveModifiers(){
   global ModifiersActiveMap
-  modifiers := ModifiersActiveMap.Clone()
+  modifiers := {}
+  for modifier, modKeys in ModifiersActiveMap {
+    modifiers[modifier] := true
+  }
   modifiers.Remove("")
   return modifiers
 }
@@ -662,10 +673,13 @@ GetAllModifiers(){
 }
 
 GetActionPrefix(){
-  global ModifiersActiveMap
+  MakeModifierPrefix( GetAllActiveModifiers() )
+}
+
+MakeModifierPrefix( activeModifiers ){
   prefix := ""
   for modifier, prx in GetAllModifiers() {
-    if ModifiersActiveMap[modifier]
+    if activeModifiers[modifier]
       prefix .= prx
   }
   return prefix
