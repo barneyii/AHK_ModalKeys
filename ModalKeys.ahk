@@ -144,8 +144,6 @@ PrintScreen & Delete:: ; toggle debug
   return
 PrintScreen:: Send {PrintScreen} ; send PrintScreen on key up
 
-;Capslock & F12:: Reload
-;Capslock::Return
 
 ClearTooltip(){
   Loop, 20
@@ -401,7 +399,7 @@ FlushTypingBuffer( typingActions := "" ){
 
   if actions {
     DebugMsg("**type: " actions )
-    Send %actions%
+    Send {Blind}%actions%
   }
   return actions
 }
@@ -409,10 +407,11 @@ FlushTypingBuffer( typingActions := "" ){
 DoAction( action ){
   PressActiveModifiers()
   DebugMsg("**send: " action )
-  Send % action
+  Send {Blind}%action%
   ClearBuffers()
   return action
 }
+
 
 DoQueuedModActions(){
   return DoAction( mkString(QueuedModActions, "") )

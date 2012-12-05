@@ -1,30 +1,104 @@
 {
 "DefaultMode": {
-    "'":       { "SetMode": "RFuncMode"   },
-    ",":       { "SetMode": "RFuncMode"   },
-    ".":       { "SetMode": "RFuncMode"   },
-    "p":       { "SetMode": "RFuncMode"   },
-    "y":       { "SetMode": "RFuncMode"   },
+    "'":      { "SetMode": "RFuncMode"    },
+    ",":      { "SetMode": "RFuncMode"    },
+    ".":      { "SetMode": "RFuncMode"    },
+    "p":      { "SetMode": "RFuncMode"    },
+    "y":      { "SetMode": "RFuncMode"    },
 
-    "a":       { "SetMode": "RNavMode"    },
-    "o":       { "SetMode": "RNavMode"    },
-    "e":       { "SetMode": "RNavMode"    },
-    "u":       { "SetMode": "RNavMode"    },
-    "i":       { "SetMode": "RNavMode"    },
+    "a":      { "SetMode": "RNavMode"     },
+    "o":      { "SetMode": "RNavMode"     },
+    "e":      { "SetMode": "RNavMode"     },
+    "u":      { "SetMode": "RNavMode"     },
+    "i":      { "SetMode": "RNavMode"     },
 
-    "f":       { "SetMode": "LFuncMode"   },
-    "g":       { "SetMode": "LFuncMode"   },
-    "c":       { "SetMode": "LFuncMode"   },
-    "r":       { "SetMode": "LFuncMode"   },
-    "l":       { "SetMode": "LFuncMode"   },
+    "j":      { "SetMode": "RNumPadMode"  },
 
-    "d":       { "SetMode": "LModMode"    },
-    "h":       { "SetMode": "LFuncMode"   },
-    "t":       { "SetMode": "LModMode"    },
-    "n":       { "SetMode": "LModMode"    },
-    "s":       { "SetMode": "LModMode"    },
-    "-":       { "SetMode": "LModMode"    }
+    "f":      { "SetMode": "LFuncMode"    },
+    "g":      { "SetMode": "LFuncMode"    },
+    "c":      { "SetMode": "LFuncMode"    },
+    "r":      { "SetMode": "LFuncMode"    },
+    "l":      { "SetMode": "LFuncMode"    },
+
+    "d":      { "SetMode": "LModMode"     },
+    "h":      { "SetMode": "LModMode"     },
+    "t":      { "SetMode": "LModMode"     },
+    "n":      { "SetMode": "LModMode"     },
+    "s":      { "SetMode": "LModMode"     },
+    "-":      { "SetMode": "LModMode"     }
 },
+
+
+"RFuncMode": {
+    "'":    { "Modifiers": ["LShift"]    },
+    ",":    { "Modifiers": ["LAlt"]      },
+    ".":    { "Modifiers": ["LControl"]  },
+    "p":    {   "SetMode":  "RFuncMode"  },
+    "y":    { "Modifiers": ["LWin"]      },
+
+    "7":    { "Action": "{f7}"           },
+    "8":    { "Action": "{f8}"           },
+    "9":    { "Action": "{f9}"           },
+    "0":    { "Action": "{f10}"          },
+    "[":    { "Action": "{f11}"          },
+    "]":    { "Action": "{f12}"          }
+},
+
+"RNavMode": {
+    "a":    { "Modifiers": ["LShift"]    },
+    "o":    { "Modifiers": ["LAlt"]      },
+    "e":    { "Modifiers": ["LControl"]  },
+    "u":    { "SetMode":  "RNavMode"     },
+    "i":    { "Modifiers": ["LWin"]      },
+
+    "f":    { "Action": "{Escape}"       },
+    "g":    { "Action": "{Home}"         },
+    "c":    { "Action": "{PgUp}"         },
+    "r":    { "Action": "{PgDn}"         },
+    "l":    { "Action": "{End}"          },
+    "/":    { "Action": "{Enter}"        },
+
+    "d":    { "Action": "{Backspace}"    },
+    "h":    { "Action": "{Left}"         },
+    "t":    { "Action": "{Up}"           },
+    "n":    { "Action": "{Down}"         },
+    "s":    { "Action": "{Right}"        },
+    "-":    { "Action": "{Delete}"       },
+
+    "b":    { "Action": "x"              }
+},
+
+"RNumPadMode": {
+    "j":    { "SetMode": "RNumPadMode"  },
+
+    "7":    { "Action": "{Numpad7}"       },
+    "8":    { "Action": "{Numpad8}"       },
+    "9":    { "Action": "{Numpad9}"       },
+    "0":    { "Action": "{NumpadMult}"    },
+    "[":    { "Action": "("               },
+    "]":    { "Action": ")"               },
+
+    "f":    { "Action": "{Escape}"        },
+    "g":    { "Action": "{Numpad4}"       },
+    "c":    { "Action": "{Numpad5}"       },
+    "r":    { "Action": "{Numpad6}"       },
+    "l":    { "Action": "{NumpadSub}"     },
+    "/":    { "Action": "{NumpadEnter}"   },
+
+    "d":    { "Action": "{Backspace}"     },
+    "h":    { "Action": "{Numpad1}"       },
+    "t":    { "Action": "{Numpad2}"       },
+    "n":    { "Action": "{Numpad3}"       },
+    "s":    { "Action": "{NumpadAdd}"     },
+    "-":    { "Action": "{Delete}"        },
+
+    "b":    { "Action": "{:}"             },
+    "m":    { "Action": "{Numpad0}"       },
+    "w":    { "Action": "{^}"             },
+    "v":    { "Action": "{NumpadDot}"     },
+    "z":    { "Action": "{NumpadDiv}"     }
+},
+
 
 
 "LFuncMode": {
@@ -54,46 +128,7 @@
     "n":     { "Modifiers": ["RAlt"]               },
     "s":     { "Modifiers": ["RShift"]             },
     "-":     { "Modifiers": ["RControl", "LWin"]   }
-},
-
-
-
-"RFuncMode": {
-    "'":    { "Modifiers": ["LShift"]    },
-    ",":    { "Modifiers": ["LAlt"]      },
-    ".":    { "Modifiers": ["LControl"]  },
-    "p":    {   "SetMode":  "RFuncMode"  },
-    "y":    { "Modifiers": ["LWin"]      },
-
-    "7":    { "Action": "{f7}"           },
-    "8":    { "Action": "{f8}"           },
-    "9":    { "Action": "{f9}"           },
-    "0":    { "Action": "{f10}"          },
-    "[":    { "Action": "{f11}"          },
-    "]":    { "Action": "{f12}"          }
-},
-
-"RNavMode": {
-    "a":    { "Modifiers": ["LShift"]    },
-    "o":    { "Modifiers": ["LAlt"]      },
-    "e":    { "Modifiers": ["LControl"]  },
-    "u":    {   "SetMode":  "RNavMode"   },
-    "i":    { "Modifiers": ["LWin"]      },
-
-    "f":    { "Action": "{Escape}"       },
-    "g":    { "Action": "{Home}"         },
-    "c":    { "Action": "{PgUp}"         },
-    "r":    { "Action": "{PgDn}"         },
-    "l":    { "Action": "{End}"          },
-    "/":    { "Action": "{Enter}"        },
-
-    "d":    { "Action": "{Backspace}"    },
-    "h":    { "Action": "{Left}"         },
-    "t":    { "Action": "{Up}"           },
-    "n":    { "Action": "{Down}"         },
-    "s":    { "Action": "{Right}"        },
-    "-":    { "Action": "{Delete}"       },
-    "b":    { "Action": "{x}"            }
 }
+
 
 }
