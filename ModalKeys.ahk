@@ -50,6 +50,7 @@ global RepetitionDelay := 50
 
 ; Debugging
 global Debug := true
+global DebugLevel := 0
 
 SetThreadInterruptability()
 
@@ -170,14 +171,14 @@ DoRepetitions:
       DoAction( CurrentlyRepeatingAction, GetAllActiveModifiers() ) ; don't consider key-holding as normal typing
       SetTimer, DoRepetitions, % RepetitionDelay
     } else {
-      DebugMsg("[bug] repetition called on unpressed key: " CurrentlyRepeatingKey)
+      Debug0("[bug] repetition called on unpressed key: " CurrentlyRepeatingKey)
       StopRepeating()
     }
   }
   return
 
 StartRepeating( key, action ){
-  ;DebugMsg("start repeating: " key " - " action)
+  ;Debug2("start repeating: " key " - " action)
   CurrentlyRepeatingKey := key
   CurrentlyRepeatingAction := action
   SetTimer, DoRepetitions, % FirstRepetitionDelay
@@ -186,7 +187,7 @@ StartRepeating( key, action ){
 
 StopRepeating(){
   if CurrentlyRepeatingAction {
-    ;DebugMsg("stop repeating: " CurrentlyRepeatingKey " - " CurrentlyRepeatingAction)
+    ;Debug2("stop repeating: " CurrentlyRepeatingKey " - " CurrentlyRepeatingAction)
   }
   CurrentlyRepeatingAction := ""
   CurrentlyRepeatingKey := ""
@@ -199,7 +200,7 @@ StopRepeating(){
 EndModeTransition:
   InModeTransition := false
   SetTimer EndModeTransition, Off
-  ;DebugMsg( CurrentMode " Mode Transition over")
+  ;Debug2( CurrentMode " Mode Transition over")
   return
 
 DelayEndModeTransition(){
@@ -208,7 +209,7 @@ DelayEndModeTransition(){
 
 DoInactivityTimeout:
   if ( CurrentMode != DefaultMode ){
-    DebugMsg( "Inactivity Timeout from " CurrentMode )
+    ;Debug2( "Inactivity Timeout from " CurrentMode )
     ActivateMode( DefaultMode )
   }
   if ( not A_IsSuspended ){
@@ -219,7 +220,7 @@ DoInactivityTimeout:
 DoTypingModeTimeout:
   if ( NoPressedKeys() ){
     if ( CurrentMode != DefaultMode ){
-      DebugMsg( "TypingMode Timeout from " CurrentMode )
+      ;Debug2( "TypingMode Timeout from " CurrentMode )
       ActivateMode( DefaultMode )
     }
     if ( not A_IsSuspended ){
@@ -249,14 +250,14 @@ PressKeyEvent( key ){
   if KeyIsUnpressed( key ) { ; disable hardware key-repetition
     SetNow()
     activeModifiers := GetAllActiveModifiers()
-    DebugMsg( StrPad("P> " key, 14) " " MakeStatusMsg(), false )
+    Debug1( StrPad("P> " key, 14) " " MakeStatusMsg(), false )
     SetKeyPressed( key )
 
     ; use separate function for performing actions so it can be called separately
     DoKeyPress( key, activeModifiers )
 
     UpdateStatusTooltip()
-    DebugMsg( StrPad("<P " key, 14) " " MakeStatusMsg(), false )
+    Debug1( StrPad("<P " key, 14) " " MakeStatusMsg(), false )
   }
 }
 DoKeyPress( key, activeModifiers ){
@@ -270,7 +271,7 @@ DoKeyPress( key, activeModifiers ){
 
   binding := GetCurrentBinding( key )
 
-  ;DebugMsg("action: " typingAction " last: " LastAction " " Now() - LastActionTime "ms ago")
+  ;Debug2("action: " typingAction " last: " LastAction " " Now() - LastActionTime "ms ago")
   ; do double-tap action (same key pressed twice quickly enough) on press
   if ( CurrentMode == DefaultMode
       and LastAction == typingAction
@@ -313,7 +314,7 @@ DoKeyPress( key, activeModifiers ){
 ReleaseKeyEvent( key ){
   SetNow()
   activeModifiers := GetAllActiveModifiers()
-  DebugMsg( StrPad( "R> " key, 14) " " MakeStatusMsg(), false )
+  Debug1( StrPad( "R> " key, 14) " " MakeStatusMsg(), false )
   DeactivateKey( key )
 
   ReleaseInactiveModifiers() ; release any modifiers that were deactivated
@@ -336,16 +337,17 @@ ReleaseKeyEvent( key ){
   ;PrunePressedKeys()
   if NoPressedKeys() {
     if ( CurrentMode == TypingMode ){
-      DebugMsg("no keys pressed. starting TypingMode timeout")
+      ;Debug2("no keys pressed. starting TypingMode timeout")
       DelayDoTypingModeTimeout()
-    } else {
-      DebugMsg("no keys pressed. entering default mode")
+    }
+    else if ( CurrentMode != DefaultMode ) {
+      ;Debug2("no keys pressed. entering default mode")
       ActivateMode( DefaultMode ) ; this sub activates if no keys are pressed
     }
   }
 
   UpdateStatusTooltip()
-  DebugMsg( StrPad( "R< " key, 14) " " MakeStatusMsg(), false )
+  Debug1( StrPad( "R< " key, 14) " " MakeStatusMsg(), false )
 }
 
 
@@ -354,10 +356,10 @@ ReleaseKeyEvent( key ){
 
 ActivateMode( newMode ) {
   oldMode := CurrentMode
-  ;DebugMsg( "activating mode: " newMode )
+  ;Debug2( "activating mode: " newMode )
 
   if ( oldMode == newMode ) {
-    DebugMsg( "[bug] oldMode(" oldMode ") = newMode(" newMode ")" )
+    Debug0( "[bug] oldMode(" oldMode ") = newMode(" newMode ")" )
     return
   }
 
@@ -394,7 +396,7 @@ ActivateMode( newMode ) {
     DelayEndModeTransition()
   }
 
-  ;DebugMsg( "  mode change key transition: ("
+  ;Debug2( "  mode change key transition: ("
   ;  . mkString(werePressed) ")(" mkString(oldModkeys) ") - [" mkString(keysToDeactivate) "] => "
   ;  . "(" mkString(persistingModKeys) ")(" mkString(activatedModifiers) ")" )
 
@@ -406,7 +408,7 @@ ActivateMode( newMode ) {
 DoModifierChange( modifierChange ){
   if ( modifierChange ){
     Send % modifierChange
-    DebugMsg( "**send_m: " modifierChange)
+    Debug1( "**send_m: " modifierChange)
   }
 }
 
@@ -420,7 +422,7 @@ FlushTypingBuffer( typingActions := "" ){
   ClearBuffers() ; TODO: use Object.Remove() for atomicity if necessary
 
   if actions {
-    DebugMsg("**type: " actions )
+    Debug1("**type: " actions )
     Send {Blind}%actions%
     LastAction := actions
     LastActionTime := Now()
@@ -430,7 +432,7 @@ FlushTypingBuffer( typingActions := "" ){
 
 DoAction( action, activeModifiers ){
   PressUnpressedModifiers( activeModifiers )
-  DebugMsg("**send: " action )
+  Debug1("**send: " action )
   Send {Blind}%action%
   ClearBuffers()
   LastAction := action
@@ -453,7 +455,7 @@ QueuedModActionsLimitReached(){
 
 QueueModAction( key, modAction ){
   if QueuedModActionsLimitReached() {
-    DebugMsg("[bug] too many queued modActions: "
+    Debug0("[bug] too many queued modActions: "
       . mkString(QueuedModKeys) ":" mkString(QueuedModActions)
       . " => " key ":" modAction, false )
     return
@@ -516,17 +518,17 @@ ReleaseInactiveModifiers(){
 PrunePressedKeys(){
   toPrune := {}
   for key, t in GetPressedKeys() {
-    ;DebugMsg("  checking " key  "\t" GetKeyState(key, "P") "\t" GetKeyState(key))
+    ;Debug2("  checking " key  "\t" GetKeyState(key, "P") "\t" GetKeyState(key))
     if ( not GetKeyState(key, "P") ){
       toPrune[key] := true
     }
   }
   deactivatedModifiers := DeactivateKeys( toPrune )
   if !IsEmpty( toPrune ){
-    DebugMsg("[bug] Unpressed keys found in PressedKeys: " mkString(toPrune) )
+    Debug0("[bug] Unpressed keys found in PressedKeys: " mkString(toPrune) )
   }
   if !IsEmpty( deactivatedModifiers ){
-    DebugMsg("[bug] Modifiers deactivated during prune: " mkString(deactivatedModifiers))
+    Debug0("[bug] Modifiers deactivated during prune: " mkString(deactivatedModifiers))
   }
 }
 
@@ -858,22 +860,31 @@ RemoveIntersection( ByRef set1, ByRef set2 ){
 
 ; Debugging
 ;===============================================================
-SetThreadInterruptability(){
-  if Debug {
-    Thread, Interrupt, 200, 2000
-  } else {
-    Thread, Interrupt, 20, 2000
-  }
-}
 
 DebugMsg( msg, prepend_space := true ){
   logFile := "debug.log"
-  if (Debug) {
+  if ( Debug ) {
     sp := prepend_space ? "        " : "  "
     FormatTime timestamp, , yyyy-MM-dd HH:mm:ss
     FileAppend, % timestamp sp msg "\n", % logFile
   }
 }
+Debug0( msg, prepend_space := true ){
+  DebugMsg( msg, prepend_space )
+}
+
+Debug1( msg, prepend_space := true ){
+  if ( DebugLevel >= 1 ){
+    DebugMsg( msg, prepend_space)
+  }
+}
+
+Debug2( msg, prepend_space := true ){
+  if ( DebugLevel >= 2 ){
+    DebugMsg( msg, prepend_space )
+  }
+}
+
 MakeStatusMsg(){
   global TypingBuffer, QueuedModActions
   if Debug {
@@ -886,6 +897,7 @@ MakeStatusMsg(){
     return msg
   }
 }
+
 OffsetTooltip(msg, rowOffset := 0){
   Tooltip % msg, 0, 18*4*rowOffset, rowOffset+1
 }
@@ -897,4 +909,12 @@ RemoveStatusTooltip:
 UpdateStatusTooltip(){
   Tooltip % CurrentMode " " ModifierPrefix_Display() "" mkString( GetPressedKeys(), "," ), 0, 0, 1
   SetTimer, RemoveStatusTooltip, % 2000
+}
+
+SetThreadInterruptability(){
+  if Debug {
+    Thread, Interrupt, 200, 2000
+  } else {
+    Thread, Interrupt, 20, 2000
+  }
 }
