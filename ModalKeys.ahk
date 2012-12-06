@@ -160,7 +160,7 @@ ClearTooltip(){
 ; Put Hooks into Keys
 ;===============================================================
 #Include KeyHooks.ahk
-
+#Include Hotkeys.ahk
 
 ; Key Repetition Handlers
 ;===============================================================
