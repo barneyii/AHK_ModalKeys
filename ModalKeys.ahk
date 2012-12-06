@@ -49,7 +49,7 @@ global RepetitionDelay := 50
 ;===============================================================
 
 ; Debugging
-global Debug := false
+global Debug := true
 
 SetThreadInterruptability()
 
@@ -206,30 +206,37 @@ DelayEndModeTransition(){
   SetTimer EndModeTransition, % ModeActivationDelay
 }
 
-EnterDefaultMode:
+DoInactivityTimeout:
+  if ( CurrentMode != DefaultMode ){
+    DebugMsg( "Inactivity Timeout from " CurrentMode )
+    ActivateMode( DefaultMode )
+  }
   if ( not A_IsSuspended ){
-    if ( CurrentMode != DefaultMode ){
-      ;DebugMsg( "enter DefaultMode from " CurrentMode )
-      ActivateMode( DefaultMode )
-    }
-    DelayEnterDefaultMode()
+    DelayDoInactivityTimeout()
   }
   return
-DelayEnterDefaultMode(){
-  static currentlyScheduled
-  currentWait := currentlyScheduled - A_TickCount
 
-  if ( NoPressedKeys() and CurrentMode == TypingMode ) {
-    newWait := TypingModeTimeout
-  } else {
-    newWait := InactivityTimeout
+DoTypingModeTimeout:
+  if ( NoPressedKeys() ){
+    if ( CurrentMode != DefaultMode ){
+      DebugMsg( "TypingMode Timeout from " CurrentMode )
+      ActivateMode( DefaultMode )
+    }
+    if ( not A_IsSuspended ){
+      DelayDoTypingModeTimeout()
+    }
   }
+  return
 
-  ;DebugMsg( CurrentMode ": delaying DefaultMode mode " currentWait "ms => " newWait "ms")
-  SetTimer EnterDefaultMode, % newWait
-  currentlyScheduled := A_TickCount + newWait
+DelayDoInactivityTimeout(){
+  SetTimer DoInactivityTimeout, % InactivityTimeout
+  SetTimer DoTypingModeTimeout, off
 }
 
+DelayDoTypingModeTimeout(){
+  SetTimer DoInactivityTimeout, % InactivityTimeout
+  SetTimer DoTypingModeTimeout, % TypingModeTimeout
+}
 
 
 ; Key Handlers
@@ -237,7 +244,7 @@ DelayEnterDefaultMode(){
 
 PressKeyEvent( key ){
   ; delay auto-retun to DefaultMode after %InactivityTimout%
-  DelayEnterDefaultMode()
+  DelayDoInactivityTimeout()
 
   if KeyIsUnpressed( key ) { ; disable hardware key-repetition
     SetNow()
@@ -329,10 +336,11 @@ ReleaseKeyEvent( key ){
   ;PrunePressedKeys()
   if NoPressedKeys() {
     if ( CurrentMode == TypingMode ){
-      DelayEnterDefaultMode()
+      DebugMsg("no keys pressed. starting TypingMode timeout")
+      DelayDoTypingModeTimeout()
     } else {
-      ;DebugMsg("no keys pressed. entering default mode")
-      GoSub EnterDefaultMode ; this sub activates if no keys are pressed
+      DebugMsg("no keys pressed. entering default mode")
+      ActivateMode( DefaultMode ) ; this sub activates if no keys are pressed
     }
   }
 
@@ -852,7 +860,7 @@ RemoveIntersection( ByRef set1, ByRef set2 ){
 ;===============================================================
 SetThreadInterruptability(){
   if Debug {
-    Thread, Interrupt, 60, 2000
+    Thread, Interrupt, 200, 2000
   } else {
     Thread, Interrupt, 20, 2000
   }
