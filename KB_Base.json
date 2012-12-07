@@ -1,4 +1,5 @@
 {
+  "CapsLock":       { "SetMode": "BaseModMode" },
   "LControl":       { "SetMode": "BaseModMode" },
   "LShift":         { "SetMode": "TypingMode"  },
   "LAlt":           { "SetMode": "BaseModMode" },

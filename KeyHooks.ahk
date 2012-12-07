@@ -3,20 +3,22 @@
 #IfWinNotActive ahk_class VMUIFrame
 
 ; Modifiers
-  $*LControl::      PressKeyEvent(   "LControl" )
-  $*LControl Up::   ReleaseKeyEvent( "LControl" )
+  $*CapsLock::      PressKeyEvent(   "CapsLock" )
+  $*CapsLock Up::   ReleaseKeyEvent( "CapsLock" )
   $*LShift::        PressKeyEvent(   "LShift" )
   $*LShift Up::     ReleaseKeyEvent( "LShift" )
-  $*LAlt::          PressKeyEvent(   "LAlt" )
-  $*LAlt Up::       ReleaseKeyEvent( "LAlt" )
+  $*LControl::      PressKeyEvent(   "LControl" )
+  $*LControl Up::   ReleaseKeyEvent( "LControl" )
   $*LWin::          PressKeyEvent(   "LWin" )
   $*LWin Up::       ReleaseKeyEvent( "LWin" )
+  $*LAlt::          PressKeyEvent(   "LAlt" )
+  $*LAlt Up::       ReleaseKeyEvent( "LAlt" )
+  $*RAlt::          PressKeyEvent(   "RAlt" )
+  $*RAlt Up::       ReleaseKeyEvent( "RAlt" )
   $*RControl::      PressKeyEvent(   "RControl" )
   $*RControl Up::   ReleaseKeyEvent( "RControl" )
   $*RShift::        PressKeyEvent(   "RShift" )
   $*RShift Up::     ReleaseKeyEvent( "RShift" )
-  $*RAlt::          PressKeyEvent(   "RAlt" )
-  $*RAlt Up::       ReleaseKeyEvent( "RAlt" )
 
 
 ; Normal Keys

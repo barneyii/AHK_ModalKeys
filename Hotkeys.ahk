@@ -18,6 +18,7 @@ return
 ^#q::SetCapsLockState, % GetKeyState("CapsLock", "T")? "Off":"On"
 
 ; left-hand undo/cut/copy/paste
+<^o:: Send ^s
 <^;:: Send ^z
 <^q:: Send ^x
 <^j:: Send ^c

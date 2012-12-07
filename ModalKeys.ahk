@@ -1,7 +1,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;  NOTES  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; For best performance, set windows Keyboard settings as follows:
 ;; "Repeat Delay" to as Short as possible
-;; "Repeate Rate" to as Slow as possile
+;; "Repeate Rate" to very Slow
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
