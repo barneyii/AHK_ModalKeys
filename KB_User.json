@@ -1,4 +1,17 @@
 {
+"BaseModMode": {
+    "CapsLock":       { "Modifiers": ["RControl"]  },
+    "LControl":       { "Modifiers": ["LControl"]  },
+    "LShift":         { "Modifiers": ["LShift"]    },
+    "LAlt":           { "Modifiers": ["LAlt"]      },
+    "LWin":           { "Modifiers": ["LWin"]      },
+    "RControl":       { "Modifiers": ["RControl"]  },
+    "RShift":         { "Modifiers": ["RShift"]    },
+    "RAlt":           { "Modifiers": ["RAlt"]      },
+
+    "\\":             { "Action": "{Tab}"          }
+},
+
 "DefaultMode": {
     "`":      { "SetMode": "WinNMode"     },
 
@@ -57,6 +70,7 @@
     "r":    { "Action": "{PgDn}"         },
     "l":    { "Action": "{End}"          },
     "/":    { "Action": "{Enter}"        },
+    "=":    { "Action": "{AppsKey}"      },
 
     "d":    { "Action": "{Backspace}"    },
     "h":    { "Action": "{Left}"         },

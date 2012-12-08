@@ -1,5 +1,4 @@
 {
-  "CapsLock":       { "Modifiers": ["RControl"]  },
   "LControl":       { "Modifiers": ["LControl"]  },
   "LShift":         { "Modifiers": ["LShift"]    },
   "LAlt":           { "Modifiers": ["LAlt"]      },
