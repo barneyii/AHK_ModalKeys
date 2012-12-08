@@ -13,9 +13,7 @@ return
 +F10::Send {AppsKey}
 
 ; capslock
-^#k::SetCapsLockState, % GetKeyState("CapsLock", "T")? "Off":"On"
-^#j::SetCapsLockState, % GetKeyState("CapsLock", "T")? "Off":"On"
-^#q::SetCapsLockState, % GetKeyState("CapsLock", "T")? "Off":"On"
+^#a::SetCapsLockState, % GetKeyState("CapsLock", "T")? "Off":"On"
 
 ; left-hand undo/cut/copy/paste
 <^o:: Send ^s

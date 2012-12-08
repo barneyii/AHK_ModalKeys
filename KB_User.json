@@ -2,28 +2,26 @@
 "DefaultMode": {
     "`":      { "SetMode": "WinNMode"     },
 
-    "'":      { "SetMode": "RFuncMode"    },
-    ",":      { "SetMode": "RFuncMode"    },
-    ".":      { "SetMode": "RFuncMode"    },
-    "p":      { "SetMode": "RFuncMode"    },
-    "y":      { "SetMode": "RFuncMode"    },
+    "'":      { "SetMode": "RNavMode"     },
+    ",":      { "SetMode": "RNavMode"     },
+    ".":      { "SetMode": "RNavMode"     },
+    "p":      { "SetMode": "RNavMode"     },
 
-    "a":      { "SetMode": "RNavMode"     },
-    "o":      { "SetMode": "RNavMode"     },
-    "e":      { "SetMode": "RNavMode"     },
+    "a":      { "SetMode": "RModMode"     },
+    "o":      { "SetMode": "RModMode"     },
+    "e":      { "SetMode": "RModMode"     },
     "u":      { "SetMode": "RNavMode"     },
-    "i":      { "SetMode": "RNavMode"     },
+    "i":      { "SetMode": "RModMode"     },
 
     "j":      { "SetMode": "RNumPadMode"  },
 
-    "f":      { "SetMode": "LFuncMode"    },
     "g":      { "SetMode": "LFuncMode"    },
     "c":      { "SetMode": "LFuncMode"    },
     "r":      { "SetMode": "LFuncMode"    },
     "l":      { "SetMode": "LFuncMode"    },
 
     "d":      { "SetMode": "LModMode"     },
-    "h":      { "SetMode": "LModMode"     },
+    "h":      { "SetMode": "LFuncMode"    },
     "t":      { "SetMode": "LModMode"     },
     "n":      { "SetMode": "LModMode"     },
     "s":      { "SetMode": "LModMode"     },
@@ -34,27 +32,24 @@
     "`":     { "Modifiers": ["RControl", "LWin"]   }
 },
 
-"RFuncMode": {
+"RNavMode": {
     "'":    { "Modifiers": ["LShift"]    },
     ",":    { "Modifiers": ["LAlt"]      },
     ".":    { "Modifiers": ["LControl"]  },
-    "p":    {   "SetMode":  "RFuncMode"  },
-    "y":    { "Modifiers": ["LWin"]      },
+    "p":    { "Modifiers": ["LWin"]      },
+
+    "a":    { "Modifiers": ["LShift"]    },
+    "o":    { "Modifiers": ["LAlt"]      },
+    "e":    { "Modifiers": ["LControl"]  },
+    "u":    {   "SetMode":  "RNavMode"   },
+    "i":    { "Modifiers": ["LWin"]      },
 
     "7":    { "Action": "{f7}"           },
     "8":    { "Action": "{f8}"           },
     "9":    { "Action": "{f9}"           },
     "0":    { "Action": "{f10}"          },
     "[":    { "Action": "{f11}"          },
-    "]":    { "Action": "{f12}"          }
-},
-
-"RNavMode": {
-    "a":    { "Modifiers": ["LShift"]    },
-    "o":    { "Modifiers": ["LAlt"]      },
-    "e":    { "Modifiers": ["LControl"]  },
-    "u":    { "SetMode":  "RNavMode"     },
-    "i":    { "Modifiers": ["LWin"]      },
+    "]":    { "Action": "{f12}"          },
 
     "f":    { "Action": "{Escape}"       },
     "g":    { "Action": "{Home}"         },
@@ -73,46 +68,53 @@
     "b":    { "Action": "x"              }
 },
 
+"RModMode": {
+    "a":    { "Modifiers": ["LShift"]    },
+    "o":    { "Modifiers": ["LAlt"]      },
+    "e":    { "Modifiers": ["LControl"]  },
+    "u":    {   "SetMode":  "RNavMode"   },
+    "i":    { "Modifiers": ["LWin"]      }
+},
+
 "RNumPadMode": {
-    "j":    { "SetMode": "RNumPadMode"  },
+    "j":    { "SetMode": "RNumPadMode"     },
 
-    "7":    { "Action": "{Numpad7}"       },
-    "8":    { "Action": "{Numpad8}"       },
-    "9":    { "Action": "{Numpad9}"       },
-    "0":    { "Action": "{NumpadMult}"    },
-    "[":    { "Action": "("               },
-    "]":    { "Action": ")"               },
+    "7":    {  "Action": "{Numpad7}"       },
+    "8":    {  "Action": "{Numpad8}"       },
+    "9":    {  "Action": "{Numpad9}"       },
+    "0":    {  "Action": "{NumpadMult}"    },
+    "[":    {  "Action": "("               },
+    "]":    {  "Action": ")"               },
 
-    "f":    { "Action": "{Escape}"        },
-    "g":    { "Action": "{Numpad4}"       },
-    "c":    { "Action": "{Numpad5}"       },
-    "r":    { "Action": "{Numpad6}"       },
-    "l":    { "Action": "{NumpadSub}"     },
-    "/":    { "Action": "{NumpadEnter}"   },
+    "f":    {  "Action": "{Escape}"        },
+    "g":    {  "Action": "{Numpad4}"       },
+    "c":    {  "Action": "{Numpad5}"       },
+    "r":    {  "Action": "{Numpad6}"       },
+    "l":    {  "Action": "{NumpadSub}"     },
+    "/":    {  "Action": "{NumpadEnter}"   },
 
-    "d":    { "Action": "{Backspace}"     },
-    "h":    { "Action": "{Numpad1}"       },
-    "t":    { "Action": "{Numpad2}"       },
-    "n":    { "Action": "{Numpad3}"       },
-    "s":    { "Action": "{NumpadAdd}"     },
-    "-":    { "Action": "{Delete}"        },
+    "d":    {  "Action": "{Backspace}"     },
+    "h":    {  "Action": "{Numpad1}"       },
+    "t":    {  "Action": "{Numpad2}"       },
+    "n":    {  "Action": "{Numpad3}"       },
+    "s":    {  "Action": "{NumpadAdd}"     },
+    "-":    {  "Action": "{Delete}"        },
 
-    "b":    { "Action": "{:}"             },
-    "m":    { "Action": "{Numpad0}"       },
-    "w":    { "Action": "{^}"             },
-    "v":    { "Action": "{NumpadDot}"     },
-    "z":    { "Action": "{NumpadDiv}"     }
+    "b":    {  "Action": "{:}"             },
+    "m":    {  "Action": "{Numpad0}"       },
+    "w":    {  "Action": "{^}"             },
+    "v":    {  "Action": "{NumpadDot}"     },
+    "z":    {  "Action": "{NumpadDiv}"     }
 },
 
 
-
 "LFuncMode": {
-    "f":     { "Modifiers": ["LWin"]               },
-    "g":     { "SetMode":    "LFuncMode"           },
+    "g":     { "Modifiers": ["LWin"]               },
     "c":     { "Modifiers": ["RControl"]           },
     "r":     { "Modifiers": ["RAlt"]               },
     "l":     { "Modifiers": ["RShift"]             },
 
+    "d":     { "Modifiers": ["LWin"]               },
     "h":     {   "SetMode":  "LFuncMode"           },
     "t":     { "Modifiers": ["RControl"]           },
     "n":     { "Modifiers": ["RAlt"]               },
