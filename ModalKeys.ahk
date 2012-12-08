@@ -141,7 +141,7 @@ PrintScreen & F10:: ; toggle debug
   Debug := not Debug
   SetThreadInterruptability()
   DeactivateAllKeys()
-  ClearTooltip()
+  ClearTooltips()
   return
 PrintScreen & F11::    ; Reload
   DeactivateAllKeys()
@@ -151,7 +151,7 @@ PrintScreen & F12::Suspend
 PrintScreen:: Send {PrintScreen} ; send PrintScreen on key up
 
 
-ClearTooltip(){
+ClearTooltips(){
   Loop, 20
   ToolTip, , 0, 0, A_Index
 }
@@ -170,6 +170,7 @@ DoRepetitions:
     if (GetKeyState(CurrentlyRepeatingKey, "P")){
       DoAction( CurrentlyRepeatingAction, GetAllActiveModifiers() ) ; don't consider key-holding as normal typing
       SetTimer, DoRepetitions, % RepetitionDelay
+      UpdateStatusTooltip()
     } else {
       Debug0("[bug] repetition called on unpressed key: " CurrentlyRepeatingKey)
       StopRepeating()
@@ -246,6 +247,7 @@ DelayDoTypingModeTimeout(){
 PressKeyEvent( key ){
   ; delay auto-retun to DefaultMode after %InactivityTimout%
   DelayDoInactivityTimeout()
+  PersistStatusTooltip()
 
   if KeyIsUnpressed( key ) { ; disable hardware key-repetition
     SetNow()
@@ -399,7 +401,7 @@ ActivateMode( newMode ) {
   ;Debug2( "  mode change key transition: ("
   ;  . mkString(werePressed) ")(" mkString(oldModkeys) ") - [" mkString(keysToDeactivate) "] => "
   ;  . "(" mkString(persistingModKeys) ")(" mkString(activatedModifiers) ")" )
-
+  UpdateStatusTooltip()
 }
 
 ; Action Buffer Helpers
@@ -907,7 +909,11 @@ RemoveStatusTooltip:
   return
 
 UpdateStatusTooltip(){
-  Tooltip % CurrentMode " " ModifierPrefix_Display() "" mkString( GetPressedKeys(), "," ), 0, 0, 1
+  msg := CurrentMode " " ModifierPrefix_Display() CurrentlyRepeatingAction " (" mkString( GetPressedKeys(), "" ) ")"
+  Tooltip % msg, 0, 0, 1
+  PersistStatusTooltip()
+}
+PersistStatusTooltip(){
   SetTimer, RemoveStatusTooltip, % 2000
 }
 
