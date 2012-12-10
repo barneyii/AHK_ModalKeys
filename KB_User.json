@@ -19,6 +19,7 @@
     ",":      { "SetMode": "RNavMode"     },
     ".":      { "SetMode": "RNavMode"     },
     "p":      { "SetMode": "RNavMode"     },
+    "y":      { "SetMode": "RNavMode"     },
 
     "a":      { "SetMode": "RModMode"     },
     "o":      { "SetMode": "RModMode"     },
@@ -28,6 +29,7 @@
 
     "j":      { "SetMode": "RNumPadMode"  },
 
+    "f":      { "SetMode": "LFuncMode"    },
     "g":      { "SetMode": "LFuncMode"    },
     "c":      { "SetMode": "LFuncMode"    },
     "r":      { "SetMode": "LFuncMode"    },
@@ -50,6 +52,7 @@
     ",":    { "Modifiers": ["LAlt"]      },
     ".":    { "Modifiers": ["LControl"]  },
     "p":    { "Modifiers": ["LWin"]      },
+    "y":    {   "SetMode":  "RNavMode"   },
 
     "a":    { "Modifiers": ["LShift"]    },
     "o":    { "Modifiers": ["LAlt"]      },
@@ -71,6 +74,7 @@
     "l":    { "Action": "{End}"          },
     "/":    { "Action": "{Enter}"        },
     "=":    { "Action": "{AppsKey}"      },
+    "\\":   { "Action": "{Tab}"          },
 
     "d":    { "Action": "{Backspace}"    },
     "h":    { "Action": "{Left}"         },
@@ -123,6 +127,7 @@
 
 
 "LFuncMode": {
+    "f":     {   "SetMode":  "LFuncMode"           },
     "g":     { "Modifiers": ["LWin"]               },
     "c":     { "Modifiers": ["RControl"]           },
     "r":     { "Modifiers": ["RAlt"]               },
