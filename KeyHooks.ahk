@@ -148,7 +148,6 @@
   $*PgDn::          PressKeyEvent(   "PgDn" )
   $*PgDn Up::       ReleaseKeyEvent( "PgDn" )
 
-
   ; Escape and Function Keys
   ;$*Escape::        PressKeyEvent(   "Escape" )
   ;$*Escape Up::     ReleaseKeyEvent( "Escape" )

@@ -9,6 +9,7 @@
 ;===============================================================
 #SingleInstance force
 #InstallKeybdHook
+#InstallMouseHook
 #MaxHotkeysPerInterval 10000000
 #HotkeyInterval 2000
 
@@ -131,36 +132,12 @@ MakeModeModModifiersMap( KeyBindings ){
   return modeModModifiers
 }
 
-; AHK Key Bindings
-;===============================================================
-
-; AutoHotkey key bindings
-PrintScreen & F8::  ListVars
-PrintScreen & F9::  KeyHistory
-PrintScreen & F10:: ; toggle debug
-  Debug := not Debug
-  SetThreadInterruptability()
-  DeactivateAllKeys()
-  ClearTooltips()
-  return
-PrintScreen & F11::    ; Reload
-  DeactivateAllKeys()
-  Reload
-  return
-PrintScreen & F12::Suspend
-PrintScreen:: Send {PrintScreen} ; send PrintScreen on key up
-
-
-ClearTooltips(){
-  Loop, 20
-  ToolTip, , 0, 0, A_Index
-}
-
 
 ; Put Hooks into Keys
 ;===============================================================
 #Include KeyHooks.ahk
 #Include Hotkeys.ahk
+#Include Hotkey_Functions.ahk
 
 ; Key Repetition Handlers
 ;===============================================================
@@ -247,7 +224,7 @@ DelayDoTypingModeTimeout(){
 PressKeyEvent( key ){
   ; delay auto-retun to DefaultMode after %InactivityTimout%
   DelayDoInactivityTimeout()
-  PersistStatusTooltip()
+  DelayClearTooltips()
 
   if KeyIsUnpressed( key ) { ; disable hardware key-repetition
     SetNow()
@@ -304,7 +281,7 @@ DoKeyPress( key, activeModifiers ){
       QueueModAction( key, action )
     }
     else { ; We are now confidently in this mode: send Action immediately
-      DoAction( action, activeModifiers )
+      doaction( action, activemodifiers )
     }
 
     ; start repeating action
@@ -333,6 +310,11 @@ ReleaseKeyEvent( key ){
   else if InModeTransition { ; release actions other than the queued action
                                   ; during transition phase are assumed to indicate typing
     ActivateMode( TypingMode )
+  }
+
+  ; perform ReleaseAction if it exists
+  if ( action := binding["ReleaseAction"] ) {
+    DoAction( action, activeModifiers )
   }
 
   ; if this was the last key released, activate DefaultMode
@@ -865,7 +847,7 @@ RemoveIntersection( ByRef set1, ByRef set2 ){
 
 DebugMsg( msg, prepend_space := true ){
   logFile := "debug.log"
-  if ( Debug ) {
+  if Debug {
     sp := prepend_space ? "        " : "  "
     FormatTime timestamp, , yyyy-MM-dd HH:mm:ss
     FileAppend, % timestamp sp msg "\n", % logFile
@@ -904,17 +886,25 @@ OffsetTooltip(msg, rowOffset := 0){
   Tooltip % msg, 0, 18*4*rowOffset, rowOffset+1
 }
 
-RemoveStatusTooltip:
-  Tooltip % "", 0, 0, 1
+ClearTooltips:
+  ClearTooltips()
   return
 
-UpdateStatusTooltip(){
-  msg := CurrentMode " " ModifierPrefix_Display() CurrentlyRepeatingAction " (" mkString( GetPressedKeys(), "" ) ")"
-  Tooltip % msg, 0, 0, 1
-  PersistStatusTooltip()
+ClearTooltips(){
+  Loop, 20
+  ToolTip, , 0, 0, A_Index
 }
-PersistStatusTooltip(){
-  SetTimer, RemoveStatusTooltip, % 2000
+
+UpdateStatusTooltip(){
+  if Debug {
+    msg := CurrentMode " " ModifierPrefix_Display() CurrentlyRepeatingAction " (" mkString( GetPressedKeys(), "" ) ")"
+    Tooltip % msg, 0, 0, 1
+    DelayClearTooltips()
+  }
+}
+
+DelayClearTooltips(){
+  SetTimer, ClearTooltips, % 2000
 }
 
 SetThreadInterruptability(){

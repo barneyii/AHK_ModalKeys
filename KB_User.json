@@ -1,19 +1,6 @@
 {
-"BaseModMode": {
-    "CapsLock":       { "Modifiers": ["RControl"]  },
-    "LControl":       { "Modifiers": ["LControl"]  },
-    "LShift":         { "Modifiers": ["LShift"]    },
-    "LAlt":           { "Modifiers": ["LAlt"]      },
-    "LWin":           { "Modifiers": ["LWin"]      },
-    "RControl":       { "Modifiers": ["RControl"]  },
-    "RShift":         { "Modifiers": ["RShift"]    },
-    "RAlt":           { "Modifiers": ["RAlt"]      },
-
-    "\\":             { "Action": "{Tab}"          }
-},
-
 "DefaultMode": {
-    "`":      { "SetMode": "WinNMode"     },
+    "`":      { "SetMode": "TildeMode"     },
 
     "'":      { "SetMode": "RNavMode"     },
     ",":      { "SetMode": "RNavMode"     },
@@ -43,8 +30,14 @@
     "-":      { "SetMode": "LModMode"     }
 },
 
-"WinNMode": {
-    "`":     { "Modifiers": ["RControl", "LWin"]   }
+"TildeMode": {
+    "`":       { "SetMode":  "TildeMode"     },
+    "1":       { "Action": "{F1}"            },
+    "2":       { "Action": "{F2}"            },
+    "3":       { "Action": "{F3}"            },
+    "4":       { "Action": "{F4}"            },
+    "5":       { "Action": "{F5}"            },
+    "6":       { "Action": "{F6}"            }
 },
 
 "RNavMode": {
@@ -155,6 +148,5 @@
     "s":     { "Modifiers": ["RShift"]             },
     "-":     { "Modifiers": ["RControl", "LWin"]   }
 }
-
 
 }

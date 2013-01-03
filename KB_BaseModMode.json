@@ -1,9 +1,14 @@
 {
+  "CapsLock":       { "Modifiers": ["RControl"]  },
+
   "LControl":       { "Modifiers": ["LControl"]  },
   "LShift":         { "Modifiers": ["LShift"]    },
   "LAlt":           { "Modifiers": ["LAlt"]      },
   "LWin":           { "Modifiers": ["LWin"]      },
+
   "RControl":       { "Modifiers": ["RControl"]  },
   "RShift":         { "Modifiers": ["RShift"]    },
-  "RAlt":           { "Modifiers": ["RAlt"]      }
+  "RAlt":           { "Modifiers": ["RAlt"]      },
+
+  "\\":             { "Action": "{Tab}"          }
 }
