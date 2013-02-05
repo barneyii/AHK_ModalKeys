@@ -7,38 +7,20 @@
 ;---------------------------------------------------------
 
 ; AutoHotkey key bindings
-PrintScreen & F9::  ListVars
-PrintScreen & F10::  KeyHistory
-PrintScreen & F11::    ; Reload
+Insert & F9::  ListVars
+Insert & F10::  KeyHistory
+Insert & F11::    ; Reload
   DeactivateAllKeys()
   Reload
   return
-PrintScreen & F12::Suspend
-PrintScreen & Delete:: ; toggle debug
+Insert & F12::Suspend
+Insert & Delete:: ; toggle debug
   Debug := not Debug
   SetThreadInterruptability()
   DeactivateAllKeys()
   ClearTooltips()
   return
-PrintScreen:: Send {PrintScreen} ; send PrintScreen on key up
-
-; with Delete as Modifier
-
-Delete & F9::  ListVars
-Delete & F10::  KeyHistory
-Delete & F11::    ; Reload
-  DeactivateAllKeys()
-  Reload
-  return
-Delete & F12::Suspend
-Delete & Insert:: ; toggle debug
-  Debug := not Debug
-  SetThreadInterruptability()
-  DeactivateAllKeys()
-  ClearTooltips()
-  return
-Delete:: Send {Delete} ; send Delete on key up
-
+Insert:: Send {Insert} ; send Insert on key up
 
 ;enable ctrl+v in Command Prompt
 #IfWinActive ahk_class ConsoleWindowClass
