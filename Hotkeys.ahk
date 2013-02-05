@@ -19,6 +19,7 @@ Insert & Delete:: ; toggle debug
   SetThreadInterruptability()
   DeactivateAllKeys()
   ClearTooltips()
+  UpdateStatusTooltip()
   return
 Insert:: Send {Insert} ; send Insert on key up
 
@@ -45,8 +46,8 @@ return
 <^k:: Send ^v
 
 ; select keyboard layout
-Esc & 1:: SetKeyboardBindings( KeyBindings1 )
-Esc & 2:: SetKeyboardBindings( KeyBindings2 )
+Esc & 1:: SetKeyboardLayout( "Qwerty" )
+Esc & 2:: SetKeyboardLayout( "Dvorak" )
 
 ; Typing Mode Lock
 Esc & Insert:: ActivateTypingLock()

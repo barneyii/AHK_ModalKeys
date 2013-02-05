@@ -49,6 +49,9 @@ global RepetitionDelay := 50
 ; Global Variables
 ;===============================================================
 
+; Default Keyboard Layout
+global KeyboardName := "Dvorak"
+
 ; Debugging
 global Debug := true
 global DebugLevel := 1
@@ -68,15 +71,16 @@ KB_User := JSON_load("KB_User.json")
 
 ; Import Base Key Bindings
 KB_Special := JSON_load("KB_Special.json")
-KB_Dvorak := JSON_load("KB_Dvorak.json")
-KB_Qwerty := JSON_load("KB_Qwerty.json")
 KB_BaseModMode := JSON_load("KB_BaseModMode.json")
 KB_TypingMode := JSON_load("KB_TypingMode.json")
+KB_Dvorak := JSON_load("KB_Dvorak.json")
+KB_Qwerty := JSON_load("KB_Qwerty.json")
 
 ; prepare global data structures
-global KeyBindings1 := InitializeKeyBindings( KB_Special, KB_Qwerty, KB_BaseModMode, KB_TypingMode, KB_User )
-global KeyBindings2 := InitializeKeyBindings( KB_Special, KB_Dvorak, KB_BaseModMode, KB_TypingMode, KB_User )
-global KeyBindings := KeyBindings2
+global KeyBindingsMap := {}
+KeyBindingsMap["Qwerty"] := InitializeKeyBindings( KB_Special, KB_Qwerty, KB_BaseModMode, KB_TypingMode, KB_User )
+KeyBindingsMap["Dvorak"] := InitializeKeyBindings( KB_Special, KB_Dvorak, KB_BaseModMode, KB_TypingMode, KB_User )
+global KeyBindings := KeyBindingsMap[KeyboardName]
 global ModeModModifiersMap := MakeModeModModifiersMap(KeyBindings)
 
 ; Status Globals
@@ -781,8 +785,9 @@ ModifierPrefix_Display( mode := ""  ){
   return prefix
 }
 
-SetKeyboardBindings( bindings ){
-  global KeyBindings = bindings
+SetKeyboardLayout( layout ){
+  global KeyboardName := layout
+  global KeyBindings := KeyBindingsMap[KeyboardName]
 }
 
 ; Helper Functions
@@ -921,14 +926,15 @@ ClearTooltips(){
 
 UpdateStatusTooltip(){
   if Debug {
-    msg := CurrentMode " " ModifierPrefix_Display() CurrentlyRepeatingAction " (" mkString( GetPressedKeys(), "" ) ")"
+    mode := TypingModeLockActive ? "TypingModeLock" : CurrentMode
+    msg := KeyboardName ": " mode " " ModifierPrefix_Display() CurrentlyRepeatingAction " (" mkString( GetPressedKeys(), "" ) ")"
     Tooltip % msg, 0, 0, 1
     DelayClearTooltips()
   }
 }
 
 DelayClearTooltips(){
-  SetTimer, ClearTooltips, % 2000
+  SetTimer, ClearTooltips, % 1000*20
 }
 
 SetThreadInterruptability(){
