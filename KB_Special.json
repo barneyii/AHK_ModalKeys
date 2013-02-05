@@ -1,0 +1,41 @@
+{
+  "CapsLock":       { "SetMode": "BaseModMode" },
+
+  "LControl":       { "SetMode": "BaseModMode" },
+  "LShift":         { "SetMode": "TypingMode"  },
+  "LAlt":           { "SetMode": "BaseModMode" },
+  "LWin":           { "SetMode": "BaseModMode" },
+  "RControl":       { "SetMode": "BaseModMode" },
+  "RShift":         { "SetMode": "TypingMode"  },
+  "RAlt":           { "SetMode": "BaseModMode" },
+
+  "Left":           { "Action": "{Left}"       },
+  "Right":          { "Action": "{Right}"      },
+  "Up":             { "Action": "{Up}"         },
+  "Down":           { "Action": "{Down}"       },
+
+  "End":            { "Action": "{End}"        },
+  "Home":           { "Action": "{Home}"       },
+  "PgUp":           { "Action": "{PgUp}"       },
+  "PgDn":           { "Action": "{PgDn}"       },
+
+  "F1":             { "Action": "{F1}"         },
+  "F2":             { "Action": "{F2}"         },
+  "F3":             { "Action": "{F3}"         },
+  "F4":             { "Action": "{F4}"         },
+  "F5":             { "Action": "{F5}"         },
+  "F6":             { "Action": "{F6}"         },
+  "F7":             { "Action": "{F7}"         },
+  "F8":             { "Action": "{F8}"         },
+  "F9":             { "Action": "{F9}"         },
+  "F10":            { "Action": "{F10}"        },
+  "F11":            { "Action": "{F11}"        },
+  "F12":            { "Action": "{F12}"        },
+
+  "Escape":         { "Action": "{Escape}"     },
+  "Tab":            { "Action": "{Tab}"        },
+  "Delete":         { "Action": "{Delete}"     },
+  "Backspace":      { "Action": "{Backspace}"  },
+  "Enter":          { "Action": "{Enter}"      },
+  "Space":          { "Action": "{Space}"      }
+}

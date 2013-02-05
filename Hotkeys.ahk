@@ -44,6 +44,13 @@ return
 <^j:: Send ^c
 <^k:: Send ^v
 
+; select keyboard layout
+Esc & 1:: SetKeyboardBindings( KeyBindings1 )
+Esc & 2:: SetKeyboardBindings( KeyBindings2 )
+
+; Typing Mode Lock
+Esc & Insert:: ActivateTypingLock()
+Insert & Esc:: DeactivateTypingLock()
 
 ; scrolling
 

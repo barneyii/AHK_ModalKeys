@@ -51,14 +51,14 @@ global RepetitionDelay := 50
 
 ; Debugging
 global Debug := true
-global DebugLevel := 0
+global DebugLevel := 1
 
 SetThreadInterruptability()
-
+,
 ; Mode Names
 global DefaultMode := "DefaultMode"
-global TypingMode  := "TypingMode"
 global BaseModMode := "BaseModMode"
+global TypingMode  := "TypingMode"
 global CurrentMode := DefaultMode
 
 ; Import User Key Bindings
@@ -67,12 +67,16 @@ global CurrentMode := DefaultMode
 KB_User := JSON_load("KB_User.json")
 
 ; Import Base Key Bindings
-KB_Base := JSON_load("KB_Base.json")
+KB_Special := JSON_load("KB_Special.json")
+KB_Dvorak := JSON_load("KB_Dvorak.json")
+KB_Qwerty := JSON_load("KB_Qwerty.json")
 KB_BaseModMode := JSON_load("KB_BaseModMode.json")
 KB_TypingMode := JSON_load("KB_TypingMode.json")
 
 ; prepare global data structures
-global KeyBindings := InitializeKeyBindings( KB_Base, KB_BaseModMode, KB_TypingMode, KB_User )
+global KeyBindings1 := InitializeKeyBindings( KB_Special, KB_Qwerty, KB_BaseModMode, KB_TypingMode, KB_User )
+global KeyBindings2 := InitializeKeyBindings( KB_Special, KB_Dvorak, KB_BaseModMode, KB_TypingMode, KB_User )
+global KeyBindings := KeyBindings2
 global ModeModModifiersMap := MakeModeModModifiersMap(KeyBindings)
 
 ; Status Globals
@@ -88,12 +92,15 @@ global LastAction := ""
 global LastActionTime := 0
 global CurrentlyRepeatingAction := ""
 global CurrentlyRepeatingKey := ""
+global TypingModeLockActive := false
 
 ; Initializers
 ;===============================================================
 
-InitializeKeyBindings( baseBindings, baseModModeBindings, typingModeBindings, userBindings){
+InitializeKeyBindings( specialBindings, layoutBindings, baseModModeBindings, typingModeBindings, userBindings ){
   allBindings := {}
+  baseBindings := specialBindings.Clone()
+  UpdateBindings( baseBindings, layoutBindings )
 
   ; initialize BaseModMode binding
   allBindings[BaseModMode] := baseBindings.Clone()
@@ -101,6 +108,7 @@ InitializeKeyBindings( baseBindings, baseModModeBindings, typingModeBindings, us
   ; initialize TypingMode binding
   allBindings[TypingMode] := baseBindings.Clone()
   UpdateBindings( allBindings[TypingMode], typingModeBindings )
+
   ; initialize user bindings
   for mode, bindings in userBindings {
     ; initialize bindings with baseBindings
@@ -339,6 +347,9 @@ ReleaseKeyEvent( key ){
 ;===============================================================
 
 ActivateMode( newMode ) {
+  if ( TypingModeLockActive and newMode != BaseModMode ){
+    newMode := TypingMode
+  }
   oldMode := CurrentMode
   ;Debug2( "activating mode: " newMode )
 
@@ -384,6 +395,15 @@ ActivateMode( newMode ) {
   ;  . mkString(werePressed) ")(" mkString(oldModkeys) ") - [" mkString(keysToDeactivate) "] => "
   ;  . "(" mkString(persistingModKeys) ")(" mkString(activatedModifiers) ")" )
   UpdateStatusTooltip()
+}
+
+ActivateTypingLock(){
+  global TypingModeLockActive := true
+  ActivateMode( TypingMode )
+}
+DeactivateTypingLock(){
+  global TypingModeLockActive := false
+  ActivateMode( DefaultMode )
 }
 
 ; Action Buffer Helpers
@@ -759,6 +779,10 @@ ModifierPrefix_Display( mode := ""  ){
           . ( GetKeyState("RShift", mode ) ? ".+" : "" )
           . ( GetKeyState("RWin", mode ) ? ".#" : "" )
   return prefix
+}
+
+SetKeyboardBindings( bindings ){
+  global KeyBindings = bindings
 }
 
 ; Helper Functions
