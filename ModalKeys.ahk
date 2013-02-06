@@ -54,7 +54,7 @@ global KeyboardName := "Dvorak"
 
 ; Debugging
 global Debug := true
-global DebugLevel := 1
+global DebugLevel := 0
 
 SetThreadInterruptability()
 ,
