@@ -38,13 +38,6 @@ return
 ; capslock
 ^#a::SetCapsLockState, % GetKeyState("CapsLock", "T")? "Off":"On"
 
-; left-hand undo/cut/copy/paste
-<^o:: Send ^s
-<^;:: Send ^z
-<^q:: Send ^x
-<^j:: Send ^c
-<^k:: Send ^v
-
 ; select keyboard layout
 Esc & 1:: SetKeyboardLayout( "Qwerty" )
 Esc & 2:: SetKeyboardLayout( "Dvorak" )
