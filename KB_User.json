@@ -30,6 +30,10 @@
     "'":      { "SetMode": "LModMode"     }
 },
 
+"Global": {
+    "#^a":    { "ExecSub": "ToggleCapsLock" }
+},
+
 "TildeMode": {
     "`":       { "SetMode":  "TildeMode"     },
     "1":       { "Action": "{F1}"            },

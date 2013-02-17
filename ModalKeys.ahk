@@ -62,26 +62,24 @@ SetThreadInterruptability()
 global DefaultMode := "DefaultMode"
 global BaseModMode := "BaseModMode"
 global TypingMode  := "TypingMode"
+global BaseMode    := "BaseMode"
 global CurrentMode := DefaultMode
 
 ; Import User Key Bindings
 ; this file should define KeyBindings[DefaultMode]
 ; along with any other Modes reachable from DefaultMode
 KB_User := JSON_load("KB_User.json")
+KB_Gaming := JSON_load("KB_Gaming.json")
 
-; Import Base Key Bindings
-KB_Special := JSON_load("KB_Special.json")
-KB_BaseModMode := JSON_load("KB_BaseModMode.json")
-KB_TypingMode := JSON_load("KB_TypingMode.json")
+; Import Keyboard Layout Bindings
 KB_Qwerty := JSON_load("KB_Qwerty.json")
 KB_Dvorak := JSON_load("KB_Dvorak.json")
-KB_Gaming := JSON_load("KB_Gaming.json")
 
 ; prepare global data structures
 global KeyBindingsMap := {}
-KeyBindingsMap["Qwerty"] := InitializeKeyBindings( KB_Special, KB_Qwerty, KB_BaseModMode, KB_TypingMode, KB_User )
-KeyBindingsMap["Dvorak"] := InitializeKeyBindings( KB_Special, KB_Dvorak, KB_BaseModMode, KB_TypingMode, KB_User )
-KeyBindingsMap["Gaming"] := InitializeKeyBindings( KB_Special, KB_Qwerty, KB_BaseModMode, KB_TypingMode, KB_Gaming )
+KeyBindingsMap["Qwerty"] := InitializeKeyBindings( KB_Qwerty, KB_User )
+KeyBindingsMap["Dvorak"] := InitializeKeyBindings( KB_Dvorak, KB_User )
+KeyBindingsMap["Gaming"] := InitializeKeyBindings( KB_Qwerty, KB_Gaming )
 
 global KeyBindings := KeyBindingsMap[KeyboardName]
 global ModeModModifiersMap := MakeModeModModifiersMap(KeyBindings)
@@ -104,23 +102,22 @@ global TypingModeLockActive := false
 ; Initializers
 ;===============================================================
 
-InitializeKeyBindings( specialBindings, layoutBindings, baseModModeBindings, typingModeBindings, userBindings ){
+InitializeKeyBindings( layoutBindings, userBindings ){
+  specialBindings := JSON_load("KB_Special.json")
+  baseModModeBindings := JSON_load("KB_BaseModMode.json")
+  typingModeBindings := JSON_load("KB_TypingMode.json")
+
   allBindings := {}
   baseBindings := specialBindings.Clone()
   UpdateBindings( baseBindings, layoutBindings )
+  allBindings[BaseMode] := baseBindings
 
-  ; initialize BaseModMode binding
-  allBindings[BaseModMode] := baseBindings.Clone()
-  UpdateBindings( allBindings[BaseModMode], baseModModeBindings )
-  ; initialize TypingMode binding
-  allBindings[TypingMode] := baseBindings.Clone()
-  UpdateBindings( allBindings[TypingMode], typingModeBindings )
+  allBindings[BaseModMode] := baseModModeBindings.Clone()
+  allBindings[TypingMode] := typingModeBindings.Clone()
 
   ; initialize user bindings
   for mode, bindings in userBindings {
-    ; initialize bindings with baseBindings
-    allBindings[mode] := baseBindings.Clone()
-    UpdateBindings( allBindings[mode], userBindings[mode] )
+    allBindings[mode] := bindings
   }
   return allBindings
 }
@@ -153,6 +150,7 @@ MakeModeModModifiersMap( KeyBindings ){
 #Include KeyHooks.ahk
 #Include ScriptControlHotkeys.ahk
 #Include Hotkey_Functions.ahk
+#Include CustomSubs.ahk
 
 ; Key Repetition Handlers
 ;===============================================================
@@ -171,7 +169,7 @@ DoRepetitions:
   return
 
 StartRepeating( key, action ){
-  ;Debug2("start repeating: " key " - " action)
+  Debug2("start repeating: " key " - " action)
   CurrentlyRepeatingKey := key
   CurrentlyRepeatingAction := action
   SetTimer, DoRepetitions, % FirstRepetitionDelay
@@ -180,7 +178,7 @@ StartRepeating( key, action ){
 
 StopRepeating(){
   if CurrentlyRepeatingAction {
-    ;Debug2("stop repeating: " CurrentlyRepeatingKey " - " CurrentlyRepeatingAction)
+    Debug2("stop repeating: " CurrentlyRepeatingKey " - " CurrentlyRepeatingAction)
   }
   CurrentlyRepeatingAction := ""
   CurrentlyRepeatingKey := ""
@@ -193,7 +191,7 @@ StopRepeating(){
 EndModeTransition:
   InModeTransition := false
   SetTimer EndModeTransition, Off
-  ;Debug2( CurrentMode " Mode Transition over")
+  Debug2( CurrentMode " Mode Transition over")
   return
 
 DelayEndModeTransition(){
@@ -202,7 +200,7 @@ DelayEndModeTransition(){
 
 DoInactivityTimeout:
   if ( CurrentMode != DefaultMode ){
-    ;Debug2( "Inactivity Timeout from " CurrentMode )
+    Debug2( "Inactivity Timeout from " CurrentMode )
     ActivateMode( DefaultMode )
   }
   if ( not A_IsSuspended ){
@@ -213,7 +211,7 @@ DoInactivityTimeout:
 DoTypingModeTimeout:
   if ( NoPressedKeys() ){
     if ( CurrentMode != DefaultMode ){
-      ;Debug2( "TypingMode Timeout from " CurrentMode )
+      Debug2( "TypingMode Timeout from " CurrentMode )
       ActivateMode( DefaultMode )
     }
     if ( not A_IsSuspended ){
@@ -296,12 +294,26 @@ DoKeyPress( key, activeModifiers ){
       QueueModAction( key, action )
     }
     else { ; We are now confidently in this mode: send Action immediately
-      doaction( action, activemodifiers )
+      DoAction( action, activemodifiers )
     }
 
     ; start repeating action
     StartRepeating( key, action )
   }
+  ; Send keystrokes
+  else if ( action := binding["Send"] ) {
+    if InModeTransition { ; prepare for different contingencies
+      ; remember this action and perform it if this key is immediately released
+      QueueModAction( key, action )
+    }
+    else { ; We are now confidently in this mode: send Action immediately
+      DoSend( action )
+    }
+
+    ; start repeating action
+    StartRepeating( key, action )
+  }
+
 }
 
 
@@ -451,6 +463,13 @@ DoAction( action, activeModifiers ){
   return action
 }
 
+DoSend( action ){
+  Send %action%
+  ClearBuffers()
+  LastAction := action
+  LastActionTime := Now()
+  return action
+}
 
 DoQueuedModActions( activeModifiers ){
   return DoAction( mkString(QueuedModActions, ""), activeModifiers )
@@ -529,7 +548,7 @@ ReleaseInactiveModifiers(){
 PrunePressedKeys(){
   toPrune := {}
   for key, t in GetPressedKeys() {
-    ;Debug2("  checking " key  "\t" GetKeyState(key, "P") "\t" GetKeyState(key))
+    Debug2("  checking " key  "\t" GetKeyState(key, "P") "\t" GetKeyState(key))
     if ( not GetKeyState(key, "P") ){
       toPrune[key] := true
     }
@@ -761,11 +780,32 @@ IsBaseModKey( key ){
 }
 
 GetTypingAction( key ){
-  return KeyBindings[TypingMode][key]["Action"]
+  if (KeyBindings[TypingMode].HasKey(key)){
+    binding := KeyBindings[TypingMode][key]
+  } else {
+    binding := KeyBindings[BaseMode][key]
+  }
+  action := binding["Action"]
+  Debug2("Typing: " action)
+  return action
 }
 
 GetCurrentBinding( key ){
-  binding := KeyBindings[CurrentMode][key]
+  keymod := GetModifierPrefix() . key
+  Debug2("Binding. key:" key . " keymod: " keymod)
+  if (KeyBindings["Global"].HasKey(keymod)){
+    Debug2("Binding: Global")
+    binding := KeyBindings["Global"][keymod]
+  } else if (KeyBindings[CurrentMode].HasKey(keymod)){
+    Debug2("Binding: keymod")
+    binding := KeyBindings[CurrentMode][keymod]
+  } else if (KeyBindings[CurrentMode].HasKey(key)){
+    Debug2("Binding: key")
+    binding := KeyBindings[CurrentMode][key]
+  } else {
+    Debug2("Binding: base")
+    binding := KeyBindings[BaseMode][key]
+  }
   return binding
 }
 

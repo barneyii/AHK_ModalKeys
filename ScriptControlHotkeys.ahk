@@ -51,6 +51,3 @@ $F3::RButton
 ; Cliboard
 $F4::SendInput {Raw}%clipboard%
 
-; capslock
-#^a:: SetCapsLockState, % GetKeyState("CapsLock", "T")? "Off":"On"
-
