@@ -54,7 +54,7 @@ global KeyboardName := "Dvorak"
 
 ; Debugging
 global Debug := true
-global DebugLevel := 0
+global DebugLevel := 2
 
 SetThreadInterruptability()
 ,
@@ -73,13 +73,16 @@ KB_User := JSON_load("KB_User.json")
 KB_Special := JSON_load("KB_Special.json")
 KB_BaseModMode := JSON_load("KB_BaseModMode.json")
 KB_TypingMode := JSON_load("KB_TypingMode.json")
-KB_Dvorak := JSON_load("KB_Dvorak.json")
 KB_Qwerty := JSON_load("KB_Qwerty.json")
+KB_Dvorak := JSON_load("KB_Dvorak.json")
+KB_Gaming := JSON_load("KB_Gaming.json")
 
 ; prepare global data structures
 global KeyBindingsMap := {}
 KeyBindingsMap["Qwerty"] := InitializeKeyBindings( KB_Special, KB_Qwerty, KB_BaseModMode, KB_TypingMode, KB_User )
 KeyBindingsMap["Dvorak"] := InitializeKeyBindings( KB_Special, KB_Dvorak, KB_BaseModMode, KB_TypingMode, KB_User )
+KeyBindingsMap["Gaming"] := InitializeKeyBindings( KB_Special, KB_Qwerty, KB_BaseModMode, KB_TypingMode, KB_Gaming )
+
 global KeyBindings := KeyBindingsMap[KeyboardName]
 global ModeModModifiersMap := MakeModeModModifiersMap(KeyBindings)
 
@@ -148,7 +151,7 @@ MakeModeModModifiersMap( KeyBindings ){
 ; Put Hooks into Keys
 ;===============================================================
 #Include KeyHooks.ahk
-#Include Hotkeys.ahk
+#Include ScriptControlHotkeys.ahk
 #Include Hotkey_Functions.ahk
 
 ; Key Repetition Handlers
@@ -262,7 +265,7 @@ DoKeyPress( key, activeModifiers ){
 
   binding := GetCurrentBinding( key )
 
-  ;Debug2("action: " typingAction " last: " LastAction " " Now() - LastActionTime "ms ago")
+  Debug2("key: " typingAction " last: " LastAction " " Now() - LastActionTime "ms ago")
   ; do double-tap action (same key pressed twice quickly enough) on press
   if ( CurrentMode == DefaultMode
       and LastAction == typingAction
@@ -283,9 +286,9 @@ DoKeyPress( key, activeModifiers ){
   }
   ; do Action
   else if ( action := binding["Action"] ) {
-
-    if ( CurrentMode == DefaultMode ){
-      ; non-modifier-key actions in DefaultMode mode indicate typing
+    Debug2("Action: " action)
+    if ( CurrentMode == DefaultMode and action == typingAction ){
+      ; typing actions in DefaultMode mode indicate typing
       ActivateMode( TypingMode )
     }
     else if InModeTransition { ; prepare for different contingencies
@@ -333,11 +336,11 @@ ReleaseKeyEvent( key ){
   ;PrunePressedKeys()
   if NoPressedKeys() {
     if ( CurrentMode == TypingMode ){
-      ;Debug2("no keys pressed. starting TypingMode timeout")
+      Debug2("no keys pressed. starting TypingMode timeout")
       DelayDoTypingModeTimeout()
     }
     else if ( CurrentMode != DefaultMode ) {
-      ;Debug2("no keys pressed. entering default mode")
+      Debug2("no keys pressed. entering default mode")
       ActivateMode( DefaultMode ) ; this sub activates if no keys are pressed
     }
   }
@@ -355,7 +358,7 @@ ActivateMode( newMode ) {
     newMode := TypingMode
   }
   oldMode := CurrentMode
-  ;Debug2( "activating mode: " newMode )
+  Debug2( "activating mode: " newMode )
 
   if ( oldMode == newMode ) {
     Debug0( "[bug] oldMode(" oldMode ") = newMode(" newMode ")" )
@@ -395,9 +398,9 @@ ActivateMode( newMode ) {
     DelayEndModeTransition()
   }
 
-  ;Debug2( "  mode change key transition: ("
-  ;  . mkString(werePressed) ")(" mkString(oldModkeys) ") - [" mkString(keysToDeactivate) "] => "
-  ;  . "(" mkString(persistingModKeys) ")(" mkString(activatedModifiers) ")" )
+  Debug2( "  mode change key transition: ("
+    . mkString(werePressed) ")(" mkString(oldModkeys) ") - [" mkString(keysToDeactivate) "] => "
+    . "(" mkString(persistingModKeys) ")(" mkString(activatedModifiers) ")" )
   UpdateStatusTooltip()
 }
 

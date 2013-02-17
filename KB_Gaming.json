@@ -1,0 +1,23 @@
+{
+"DefaultMode": {
+    "`":    { "SetMode": "TildeMode"    },
+    "'":     { "Modifiers": ["RControl", "LWin"]   },
+
+    "e":    { "Action": "{Up}"    },
+    "d":    { "Action": "{Down}"  },
+    "s":    { "Action": "{Left}"  },
+    "f":    { "Action": "{Right}" }
+},
+
+"TildeMode": {
+    "`":       { "SetMode":  "TildeMode"     },
+    "1":       { "Action": "{F1}"            },
+    "2":       { "Action": "{F2}"            },
+    "3":       { "Action": "{F3}"            },
+    "4":       { "Action": "{F4}"            },
+    "5":       { "Action": "{F5}"            },
+    "6":       { "Action": "{F6}"            }
+}
+
+
+}

@@ -1,8 +1,4 @@
 
-; Key Bindings
-;===============================================================
-
-
 ; AHK Key Bindings
 ;---------------------------------------------------------
 
@@ -23,28 +19,17 @@ Insert & Delete:: ; toggle debug
   return
 Insert:: Send {Insert} ; send Insert on key up
 
-;enable ctrl+v in Command Prompt
-#IfWinActive ahk_class ConsoleWindowClass
-^v::
-	SendInput {Raw}%clipboard%
-  Tooltip paste
-return
-
-#IfWinActive
-
-; menu key
-+F10::Send {AppsKey}
-
-; capslock
-^#a::SetCapsLockState, % GetKeyState("CapsLock", "T")? "Off":"On"
-
 ; select keyboard layout
 Esc & 1:: SetKeyboardLayout( "Qwerty" )
 Esc & 2:: SetKeyboardLayout( "Dvorak" )
+Esc & 3:: SetKeyboardLayout( "Gaming" )
 
 ; Typing Mode Lock
 Esc & Insert:: ActivateTypingLock()
 Insert & Esc:: DeactivateTypingLock()
+
+; Key Bindings
+;===============================================================
 
 ; scrolling
 
@@ -65,4 +50,7 @@ $F3::RButton
 
 ; Cliboard
 $F4::SendInput {Raw}%clipboard%
+
+; capslock
+#^a:: SetCapsLockState, % GetKeyState("CapsLock", "T")? "Off":"On"
 
