@@ -1,12 +1,16 @@
 {
 "DefaultMode": {
-    "`":    { "SetMode": "TildeMode"    },
+    "`":     { "SetMode": "TildeMode"    },
     "'":     { "Modifiers": ["RControl", "LWin"]   },
 
     "e":    { "Action": "{Up}"    },
+    "^e":   { "Action": "e"       },
     "d":    { "Action": "{Down}"  },
+    "^d":   { "Action": "d"       },
     "s":    { "Action": "{Left}"  },
-    "f":    { "Action": "{Right}" }
+    "^s":   { "Action": "s"       },
+    "f":    { "Action": "{Right}" },
+    "^f":   { "Action": "f"       }
 },
 
 "TildeMode": {
