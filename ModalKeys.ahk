@@ -274,6 +274,11 @@ DoKeyPress( key, activeModifiers ){
   else if QueuedModActionsLimitReached() { ; already a queued modAction -> assume typing intended
     ActivateMode( TypingMode )
   }
+  ; Execute Subroutine
+  else if ( action := binding["ExecSub"] ) {
+    Debug2("Exec: " action)
+    ExecSub( action )
+  }
   ; do Mode Change
   else if ( (newMode := binding["SetMode"]) and newMode != CurrentMode ){
     ActivateMode( newMode )
@@ -313,6 +318,7 @@ DoKeyPress( key, activeModifiers ){
     ; start repeating action
     StartRepeating( key, action )
   }
+
 
 }
 
@@ -469,6 +475,13 @@ DoSend( action ){
   LastAction := action
   LastActionTime := Now()
   return action
+}
+
+ExecSub( subName ){
+  ClearBuffers()
+  LastAction := subName
+  LastActionTime := Now()
+  Gosub %subName%
 }
 
 DoQueuedModActions( activeModifiers ){

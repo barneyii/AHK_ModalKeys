@@ -1,7 +1,7 @@
 {
 "DefaultMode": {
     "`":     { "SetMode": "TildeMode"    },
-    "'":      { "SetMode": "LModMode"    },
+    "'":     { "SetMode": "RPinkyMode"   },
 
     "e":    { "Action": "{Up}"    },
     "d":    { "Action": "{Down}"  },
@@ -26,8 +26,9 @@
     "6":       { "Action": "{F6}"            }
 },
 
-"LModMode": {
-    "'":     { "Modifiers": ["RControl", "LWin"]   }
+"RPinkyMode": {
+    "'":     { "Modifiers": ["RControl", "LWin"]   },
+    "a":     { "ExecSub": "ToggleCapsLock" }
 }
 
 }

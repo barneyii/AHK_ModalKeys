@@ -27,11 +27,12 @@
     "k":      { "SetMode": "LModMode"     },
     "l":      { "SetMode": "LModMode"     },
     ";":      { "SetMode": "LModMode"     },
-    "'":      { "SetMode": "LModMode"     }
+
+    "'":      { "SetMode": "RPinkyMode"   }
 },
 
 "Global": {
-    "#^a":    { "ExecSub": "ToggleCapsLock" }
+
 },
 
 "TildeMode": {
@@ -149,8 +150,11 @@
     "j":     {   "SetMode":  "LFuncMode"           },
     "k":     { "Modifiers": ["RControl"]           },
     "l":     { "Modifiers": ["RAlt"]               },
-    ";":     { "Modifiers": ["RShift"]             },
-    "'":     { "Modifiers": ["RControl", "LWin"]   }
-}
+    ";":     { "Modifiers": ["RShift"]             }
+},
 
+"RPinkyMode": {
+    "'":     { "Modifiers": ["RControl", "LWin"]   },
+    "a":     { "ExecSub": "ToggleCapsLock" }
+}
 }
